@@ -1,0 +1,81 @@
+{
+  "projectType": "ai-ml",
+  "projectName": "Mouse and Cats Game",
+  "projectDescription": "Rule-based expert system game built with CLIPS where AI-controlled cats hunt a player-controlled mouse on a chessboard",
+  "theme": "aspen",
+  "primaryColor": "#8B4513",
+  "lightColor": "#D2691E",
+  "darkColor": "#654321",
+  "navigation": {
+    "groups": [
+      {
+        "group": "Getting Started",
+        "pages": [
+          "introduction",
+          "installation",
+          "quickstart"
+        ]
+      },
+      {
+        "group": "Game Mechanics",
+        "pages": [
+          "game-mechanics/overview",
+          "game-mechanics/rules",
+          "game-mechanics/how-to-play",
+          "game-mechanics/winning-conditions"
+        ]
+      },
+      {
+        "group": "AI System",
+        "pages": [
+          "ai-system/expert-system",
+          "ai-system/cat-strategy",
+          "ai-system/game-logic"
+        ]
+      },
+      {
+        "group": "Technical Reference",
+        "pages": [
+          "technical/clips-overview",
+          "technical/data-structures",
+          "technical/rules-reference",
+          "technical/functions-reference"
+        ]
+      },
+      {
+        "group": "Development",
+        "pages": [
+          "development/architecture",
+          "development/customization",
+          "development/extending"
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Rule-based expert system using CLIPS",
+    "Perfect AI strategy with 100% win rate for cats",
+    "Interactive chess board game interface",
+    "Educational demonstration of expert systems",
+    "Strategic turn-based gameplay"
+  ],
+  "publicApiSurface": [
+    "(jugar) - Start a new game",
+    "(instrucciones) - Display game instructions",
+    "casilla template - Board cell structure",
+    "pieza template - Game piece structure",
+    "ingresar-tablero-en-blanco rule - Initialize empty board",
+    "posiciones-piezas-iniciales rule - Set initial positions",
+    "pedir-movimiento-raton rule - Request mouse move",
+    "ejecutar-movimiento-jugador-raton rule - Execute player move",
+    "buscar-diagonales-gatos rule - Find cat diagonal moves",
+    "ejecutar-movimiento-completar-fila-gatos rule - Complete row strategy",
+    "mover-gato-mas-alejado-raton rule - Move furthest cat",
+    "semi-encerrar-raton-que-esta-en-medio rule - Semi-trap middle mouse",
+    "calcular-esquinas-raton rule - Calculate corner positions",
+    "encerrar-raton rule - Trap the mouse",
+    "cubrir-posible-avance-raton rule - Block mouse advance",
+    "finalizar-juego rule - End game condition",
+    "ejecutar-movimiento-maquina-gato rule - Execute AI cat move"
+  ]
+}
