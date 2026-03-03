@@ -1,0 +1,407 @@
+---
+title: 'Customization Guide'
+description: 'Learn how to customize board size, pieces, and game display'
+---
+
+## Overview
+
+The Mouse and Cats game can be customized in several ways without changing the core rule logic. This guide shows you how to modify visual elements, piece symbols, and game parameters.
+
+## Modifying Piece Symbols
+
+Piece symbols are defined using the `pieza` template in the initial facts section.
+
+### Current Piece Definitions
+
+See: `raton_y_gatos.clp:128-157`
+
+**White Square (valor 0):**
+```clojure
+(pieza
+  (valor 0)
+  (parte1 "       ")
+  (parte2 "       ")
+  (parte3 "       ")
+)
+```
+
+**Black Square (valor 1):**
+```clojure
+(pieza
+  (valor 1)
+  (parte1 " . . . ")
+  (parte2 " . . . ")
+  (parte3 " . . . ")
+)
+```
+
+**Mouse (valor 4):**
+```clojure
+(pieza
+  (valor 4)
+  (parte1 "(_)_(_)")
+  (parte2 " (o o) ")
+  (parte3 "==\\o/==")
+)
+```
+
+**Cat (valor 5):**
+```clojure
+(pieza
+  (valor 5)
+  (parte1 " /\\_/\\ ")
+  (parte2 "( o.o )")
+  (parte3 " > ^ < ")
+)
+```
+
+### Customizing Piece Appearance
+
+<Steps>
+  <Step title="Open the source file">
+    Open `~/workspace/source/raton_y_gatos.clp` in a text editor.
+  </Step>
+  
+  <Step title="Locate the pieza definitions">
+    Find the `deffacts hechos-iniciales` section (around line 110).
+  </Step>
+  
+  <Step title="Modify the ASCII art">
+    Each piece has exactly **7 characters** per part (to fit the board grid). Maintain this width:
+    
+    ```clojure
+    (pieza
+      (valor 4)
+      (parte1 " <(o)> ")  ; Custom mouse design
+      (parte2 "  \\ /  ")
+      (parte3 "  =M=  ")
+    )
+    ```
+  </Step>
+  
+  <Step title="Test your changes">
+    Load the file in CLIPS:
+    ```
+    CLIPS> (load "raton_y_gatos.clp")
+    CLIPS> (jugar)
+    ```
+  </Step>
+</Steps>
+
+<Warning>
+  Each `parte` string must be **exactly 7 characters** wide. If you use fewer characters, add spaces. If your design is too wide, it will break the board alignment.
+</Warning>
+
+### Alternative Piece Designs
+
+**Minimalist Style:**
+```clojure
+; Mouse
+(pieza (valor 4) (parte1 "       ") (parte2 "   M   ") (parte3 "       "))
+
+; Cat
+(pieza (valor 5) (parte1 "       ") (parte2 "   C   ") (parte3 "       "))
+```
+
+**Unicode Style:**
+```clojure
+; Mouse (using Unicode if your terminal supports it)
+(pieza (valor 4) (parte1 "       ") (parte2 "   🐭   ") (parte3 "       "))
+
+; Cat
+(pieza (valor 5) (parte1 "       ") (parte2 "   🐱   ") (parte3 "       "))
+```
+
+<Info>
+  Unicode symbols may not render correctly in all CLIPS terminals. Test before committing to this style.
+</Info>
+
+## Adjusting Initial Positions
+
+### Default Starting Position
+
+The initial piece placement is defined in the `posiciones-piezas-iniciales` rule (lines 209-259).
+
+**Current setup:**
+- Mouse: Row 1, Column 4
+- Cat 1: Row 8, Column 1
+- Cat 2: Row 8, Column 3
+- Cat 3: Row 8, Column 5
+- Cat 4: Row 8, Column 7
+
+See: `raton_y_gatos.clp:234-255`
+
+### Changing Starting Positions
+
+<Steps>
+  <Step title="Locate the positioning rule">
+    Find `defrule posiciones-piezas-iniciales` around line 209.
+  </Step>
+  
+  <Step title="Modify the mouse position">
+    Change the row and column in the pattern match:
+    
+    ```clojure
+    ; Original
+    ?raton <- (casilla (fila 1)(columna 4)(valor ?))
+    
+    ; Modified - start mouse at column 2
+    ?raton <- (casilla (fila 1)(columna 2)(valor ?))
+    ```
+  </Step>
+  
+  <Step title="Modify cat positions">
+    Change any cat's starting row/column:
+    
+    ```clojure
+    ; Original cats in row 8
+    ?gato1 <- (casilla (fila 8)(columna 1)(valor ?))
+    ?gato2 <- (casilla (fila 8)(columna 3)(valor ?))
+    
+    ; Modified - cats start closer (row 6)
+    ?gato1 <- (casilla (fila 6)(columna 1)(valor ?))
+    ?gato2 <- (casilla (fila 6)(columna 3)(valor ?))
+    ```
+  </Step>
+  
+  <Step title="Update the modifications">
+    The `modify` statements must match your new pattern:
+    
+    ```clojure
+    (modify ?raton (valor 4))
+    (modify ?gato1 (valor 5 1))
+    ```
+  </Step>
+</Steps>
+
+<Warning>
+  Initial positions must be on **black squares** (odd row + odd column OR even row + even column). Placing pieces on white squares will break game logic.
+  
+  Valid positions:
+  - (1,1), (1,3), (1,5), (1,7) ← Row 1 black squares
+  - (2,2), (2,4), (2,6), (2,8) ← Row 2 black squares
+</Warning>
+
+## Modifying Display Output
+
+### Board Borders and Labels
+
+The board rendering includes borders and column numbers in the `actualizar-tablero` rule.
+
+**Top border (line 310):**
+```clojure
+(printout t crlf crlf" ------- ------- ------- ------- ------- ------- ------- -------"crlf)
+```
+
+**Bottom labels (line 358):**
+```clojure
+(printout t"    1       2       3       4       5       6       7       8 " crlf crlf)
+```
+
+### Customizing Messages
+
+<Steps>
+  <Step title="Game over message">
+    Edit the `finalizar-juego` rule (lines 2036-2052):
+    
+    ```clojure
+    (printout t crlf"GAME OVER" crlf)
+    (printout t "The cats win!" crlf)
+    ```
+  </Step>
+  
+  <Step title="Move prompts">
+    Edit the `pedir-movimiento-raton` rule (around line 403):
+    
+    ```clojure
+    (printout t crlf "Your turn! Enter row and column:" crlf)
+    (printout t "Row    [1-8] :")
+    ```
+  </Step>
+  
+  <Step title="Error messages">
+    Modify validation messages (lines 416, 434, 482):
+    
+    ```clojure
+    (printout t crlf "Invalid position! Try again."crlf)
+    (printout t crlf "That square is occupied!"crlf)
+    ```
+  </Step>
+</Steps>
+
+### Adding Color (Terminal-Dependent)
+
+If your CLIPS terminal supports ANSI color codes:
+
+```clojure
+; Red text for cats
+(pieza
+  (valor 5)
+  (parte1 "\033[31m /\\_/\\ \033[0m")
+  (parte2 "\033[31m( o.o )\033[0m")
+  (parte3 "\033[31m > ^ < \033[0m")
+)
+
+; Blue text for mouse
+(pieza
+  (valor 4)
+  (parte1 "\033[34m(_)_(_)\033[0m")
+  (parte2 "\033[34m (o o) \033[0m")
+  (parte3 "\033[34m==\\o/==\033[0m")
+)
+```
+
+<Warning>
+  ANSI codes may not work in all CLIPS environments. The `\033[31m` starts red text, `\033[34m` starts blue, and `\033[0m` resets color.
+</Warning>
+
+## Changing Board Size
+
+Changing the board size requires extensive modifications to multiple rules and is **not recommended** without deep understanding of the code.
+
+### What Would Need to Change
+
+If you want to attempt a different board size:
+
+<Steps>
+  <Step title="Board initialization (lines 194-206)">
+    Change the loop-for-count ranges:
+    
+    ```clojure
+    ; Original 8x8
+    (loop-for-count (?i 1 8)do
+      (loop-for-count (?j 1 8)do
+    
+    ; Modified 6x6
+    (loop-for-count (?i 1 6)do
+      (loop-for-count (?j 1 6)do
+    ```
+  </Step>
+  
+  <Step title="Rendering logic (lines 289-363)">
+    Update all conditionals checking `<= ?i 8`, `= ?j 8`, etc.:
+    
+    ```clojure
+    ; Change all instances of 8 to your new size
+    (if (and (and (<= ?i 6) (< ?j 6)) ...)
+    ```
+  </Step>
+  
+  <Step title="Input validation (line 414)">
+    Update range checks:
+    
+    ```clojure
+    ; Original
+    (if (or (> ?fila 8) (> ?columna 8) ...
+    
+    ; Modified for 6x6
+    (if (or (> ?fila 6) (> ?columna 6) ...
+    ```
+  </Step>
+  
+  <Step title="AI strategy rules">
+    Many AI rules have hardcoded position checks. Search for comparisons involving specific row/column numbers and adjust accordingly.
+  </Step>
+  
+  <Step title="Border rendering">
+    Update the number of dashes and column labels in the rendering rule.
+  </Step>
+</Steps>
+
+<Warning>
+  Changing board size will likely **break AI strategies**. Rules like `mover-gato-mas-alejado-raton` use hardcoded logic assuming an 8x8 board. Extensive testing and AI rule rewrites will be required.
+</Warning>
+
+## Adding New Piece Types
+
+You can add additional piece types for game variations.
+
+### Example: Adding a Dog Piece
+
+<Steps>
+  <Step title="Define the pieza">
+    Add a new pieza fact with a unique valor:
+    
+    ```clojure
+    (pieza
+      (valor 6)  ; New piece type
+      (parte1 " /|  |\\ ")
+      (parte2 " ( ww) ")
+      (parte3 "  WOOF ")
+    )
+    ```
+  </Step>
+  
+  <Step title="Place it on the board">
+    In `posiciones-piezas-iniciales`, add:
+    
+    ```clojure
+    ?perro <- (casilla (fila 4)(columna 4)(valor ?))
+    =>
+    (modify ?perro (valor 6))
+    ```
+  </Step>
+  
+  <Step title="Create movement rules">
+    Write new defrule blocks to define how the dog moves. Use existing rules as templates.
+  </Step>
+</Steps>
+
+<Info>
+  Adding new pieces requires creating corresponding movement rules and updating game-end conditions. This is an advanced modification suitable for learning CLIPS rule design.
+</Info>
+
+## Testing Your Changes
+
+After any customization:
+
+<Steps>
+  <Step title="Load the file">
+    ```
+    CLIPS> (clear)
+    CLIPS> (load "raton_y_gatos.clp")
+    ```
+  </Step>
+  
+  <Step title="Test basic functionality">
+    ```
+    CLIPS> (jugar)
+    ```
+    
+    Verify:
+    - Board renders correctly
+    - Pieces appear as expected
+    - Input prompts work
+  </Step>
+  
+  <Step title="Play a full game">
+    Test several complete games to ensure:
+    - Mouse movement works
+    - Cat AI functions
+    - Game-end detection works
+  </Step>
+  
+  <Step title="Check edge cases">
+    - Try invalid moves
+    - Move mouse to corners
+    - Test win conditions
+  </Step>
+</Steps>
+
+## Common Issues
+
+**Board alignment is broken:**
+- Check that all `parte` strings are exactly 7 characters
+- Ensure special characters (like backslashes) are properly escaped
+
+**Pieces don't appear:**
+- Verify the `valor` field matches between `casilla` and `pieza`
+- Check that initial positions are on black squares
+
+**AI doesn't move:**
+- If you changed board size, AI rules may fail to match
+- Check CLIPS output for error messages
+
+**Game crashes:**
+- Ensure all loops use correct bounds
+- Verify facts are being asserted and retracted properly

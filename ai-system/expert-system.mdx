@@ -1,0 +1,283 @@
+---
+title: 'Expert System Architecture'
+description: 'Understanding the CLIPS-based expert system that powers the cat AI'
+---
+
+## What is an Expert System?
+
+An **expert system** is a type of artificial intelligence that mimics the decision-making ability of a human expert. Unlike traditional procedural programming, expert systems use **knowledge representation** and **inference engines** to solve complex problems.
+
+This Mouse and Cats game demonstrates a classic expert system implementation where:
+- **Knowledge Base**: Rules that encode perfect cat strategy
+- **Working Memory**: Current game state (board positions, pieces)
+- **Inference Engine**: CLIPS forward-chaining algorithm
+- **User Interface**: Interactive chess board display
+
+<Info>
+Expert systems are particularly effective for games with well-defined rules and winning strategies, making the Mouse and Cats game an ideal demonstration.
+</Info>
+
+## How CLIPS Rule-Based Systems Work
+
+[CLIPS](http://www.clipsrules.net/) (C Language Integrated Production System) is a powerful rule-based programming language designed for building expert systems.
+
+### Core Components
+
+**Templates** define data structures:
+
+```clips
+(deftemplate casilla
+  "Define la estructura de las casillas de un tablero de ajedrez"
+  (slot fila (type NUMBER))
+  (slot columna (type NUMBER))
+  (multislot valor (type NUMBER))
+)
+
+(deftemplate pieza
+  "Estructura de las piezas a imprimir por pantalla"
+  (slot valor)
+  (slot parte1)
+  (slot parte2)
+  (slot parte3)
+)
+```
+
+**Rules** encode expert knowledge:
+
+```clips
+(defrule rule-name
+  "Documentation string"
+  (declare (salience 10))  ; Priority (optional)
+  
+  ; Left-hand side (LHS) - Pattern matching conditions
+  (fact-pattern ?variable)
+  (test condition)
+  
+  =>
+  
+  ; Right-hand side (RHS) - Actions to execute
+  (assert new-fact)
+  (retract old-fact)
+  (modify existing-fact)
+)
+```
+
+## Why This Game Demonstrates Expert Systems
+
+The Mouse and Cats game is an excellent expert system demonstration because:
+
+### 1. Deterministic Strategy
+The cats' perfect strategy can be fully encoded in rules. There's no randomness or probabilistic reasoning required.
+
+### 2. Pattern Recognition
+The AI identifies board patterns (semi-encirclement, diagonal positions, etc.) and responds with tactical rules:
+- Diagonal blocking formations
+- Row completion strategies
+- Mouse encirclement tactics
+
+### 3. Rule Hierarchies
+Strategic priorities are encoded using salience values:
+
+```clips
+(defrule encerrar-raton
+  "Trap the mouse when only one escape remains"
+  (declare (salience 10))  ; Highest priority - finishing move
+  ...
+)
+
+(defrule mover-gato-mas-alejado-raton
+  "Move the farthest cat toward the mouse"
+  (declare (salience -10))  ; Lowest priority - default behavior
+  ...
+)
+```
+
+### 4. Knowledge Separation
+Game logic is separated from strategy:
+- **Game mechanics**: Movement validation, turn management (raton_y_gatos.clp:367-540)
+- **Strategy rules**: Tactical decision-making (raton_y_gatos.clp:542-2035)
+- **Presentation**: Board rendering (raton_y_gatos.clp:262-363)
+
+<Tip>
+This separation of concerns makes the system maintainable and allows strategy improvements without touching game mechanics.
+</Tip>
+
+## Forward Chaining Inference
+
+CLIPS uses **forward chaining** (data-driven reasoning) to execute rules:
+
+### How It Works
+
+1. **Assert initial facts** into working memory
+2. **Match** facts against rule patterns (LHS)
+3. **Select** highest-salience rule with satisfied conditions
+4. **Execute** the rule's actions (RHS)
+5. **Repeat** until no rules match or `halt` is called
+
+### Example: Cat Movement Cycle
+
+```clips
+; Step 1: Mouse moves, triggering cat AI
+(defrule ejecutar-movimiento-jugador-raton
+  ...
+  =>
+  (modify ?casilla-a-mover (valor 4))
+  (modify ?casilla-actual (valor 1))
+  (assert (calcular-esquinas-raton))  ; Triggers next phase
+)
+
+; Step 2: Calculate available diagonal moves
+(defrule buscar-diagonales-gatos
+  (buscar-diagonales-gatos)
+  ?idGato <-(casilla (fila ?filaGatos) (columna ?columnaGatos) (valor 5 ?))
+  =>
+  (bind ?fila-a-buscar(- ?filaGatos 1))
+  (bind ?columna-der-a-buscar(+ ?columnaGatos 1))
+  (bind ?columna-izq-a-buscar(- ?columnaGatos 1))
+  (assert(esquina-gato ?idGato ?fila-a-buscar ...))
+)
+
+; Step 3: Execute highest-priority strategy
+; Either: encerrar-raton (salience 10)
+;     or: ejecutar-movimiento-completar-fila-gatos (default)
+;     or: semi-encerrar-raton
+;     or: mover-gato-mas-alejado-raton (salience -10)
+```
+
+<Note>
+CLIPS automatically handles the rule firing order based on salience and the Rete algorithm for efficient pattern matching.
+</Note>
+
+## Pattern Matching in Rules
+
+Pattern matching is the heart of CLIPS inference. Rules activate when fact patterns match working memory.
+
+### Basic Pattern Matching
+
+```clips
+; Match any mouse position
+(casilla (fila ?filaRaton) (columna ?colRaton) (valor 4))
+
+; Match cat #1 specifically
+?gato1 <- (casilla (fila ?filaGato1) (columna ?colGato1) (valor 5 1))
+
+; Bind fact identifier for later modification
+?casilla-a-mover <- (casilla (fila ?f1) (columna ?c1) (valor ?))
+```
+
+### Constraints and Tests
+
+```clips
+; Inline constraint: only match cells in range
+?h <- (imprime ?i ?j&:(<= (* ?i ?j) 64))
+
+; Test function: complex boolean logic
+(test (or (and (= ?filaRaton ?filaGato1 ?filaGato4)
+               (= (+ ?filaRaton 1) ?filaGato2 ?filaGato3))
+          (and (= ?filaRaton ?filaGato2 ?filaGato4)
+               (= (+ ?filaRaton 1) ?filaGato1 ?filaGato3))))
+```
+
+### Multi-Slot Matching
+
+```clips
+; Match any value in multislot
+(casilla (fila ?f1) (columna ?c1) (valor ?value $?))
+
+; Cats use multislot to store [type, id]
+(casilla (fila 8) (columna 1) (valor 5 1))  ; Cat type 5, ID 1
+(casilla (fila 1) (columna 4) (valor 4))    ; Mouse type 4
+```
+
+<Accordion title="Performance Optimization: The Rete Algorithm">
+CLIPS uses the Rete algorithm to efficiently match patterns against facts. Instead of re-evaluating all rules on every fact change, Rete maintains a network of nodes that incrementally update when facts are asserted/retracted.
+
+This allows the 2110-line rule base to run in real-time even with complex board states.
+</Accordion>
+
+## Control Flow and Execution
+
+Unlike procedural code, CLIPS rules don't execute sequentially. Control flow is determined by:
+
+1. **Salience** - Explicit priorities
+2. **Recency** - Most recently asserted facts
+3. **Specificity** - More specific patterns fire first
+
+### Control Facts Pattern
+
+The system uses "control facts" to orchestrate execution phases:
+
+```clips
+; Phase 1: Initialize board
+(assert (ingresar-tablero))  ; Triggers board creation
+
+; Phase 2: After mouse move
+(assert (calcular-esquinas-raton))  ; Analyze positions
+
+; Phase 3: Select strategy
+(assert (encerrar-raton))           ; Try to trap
+(assert (semi-encerrar-raton))      ; Try to semi-trap  
+(assert (gato-mas-alejado))         ; Default movement
+
+; Phase 4: Execute and update
+(assert (ejecutar-movimiento-maquina-gato))
+(assert (actualizar-tablero))
+```
+
+<Info>
+Each control fact is retracted after its rule fires, ensuring rules execute exactly once per cycle.
+</Info>
+
+## Advantages of Expert Systems for Games
+
+<CardGroup cols={2}>
+  <Card title="Explainable AI" icon="comments">
+    Every move can be traced to a specific rule, making the AI's "thought process" transparent.
+  </Card>
+  
+  <Card title="Maintainable" icon="wrench">
+    Add new strategies by writing new rules without touching existing code.
+  </Card>
+  
+  <Card title="Deterministic" icon="check">
+    Same position always produces the same move - perfect for debugging and testing.
+  </Card>
+  
+  <Card title="Human-Readable" icon="book">
+    Rules read like strategic descriptions, not low-level code.
+  </Card>
+</CardGroup>
+
+## System Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    CLIPS Inference Engine                │
+├─────────────────────────────────────────────────────────┤
+│  ┌──────────────────┐      ┌──────────────────────┐    │
+│  │  Working Memory  │◄────►│   Pattern Matcher    │    │
+│  │                  │      │   (Rete Algorithm)   │    │
+│  │  • Board state   │      └──────────┬───────────┘    │
+│  │  • Piece facts   │                 │                │
+│  │  • Control facts │                 ▼                │
+│  └──────────────────┘      ┌──────────────────────┐    │
+│           ▲                │    Agenda (Rules     │    │
+│           │                │   sorted by salience)│    │
+│           │                └──────────┬───────────┘    │
+│           │                           │                │
+│           │                           ▼                │
+│           │                ┌─────────────────────┐     │
+│           └────────────────┤  Execute Rule RHS   │     │
+│                            └─────────────────────┘     │
+├─────────────────────────────────────────────────────────┤
+│                       Knowledge Base                    │
+│  • 30+ strategic rules                                  │
+│  • Board templates                                      │
+│  • Movement validation                                  │
+└─────────────────────────────────────────────────────────┘
+```
+
+## See Also
+
+- [Cat Strategy](/ai-system/cat-strategy) - Deep dive into the strategic rules
+- [Game Logic](/ai-system/game-logic) - Board representation and movement mechanics

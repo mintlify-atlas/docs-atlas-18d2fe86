@@ -1,0 +1,107 @@
+---
+title: 'Game Overview'
+description: 'Introduction to the Mouse and Cats chess board game'
+---
+
+## What is the Mouse and Cats Game?
+
+The Mouse and Cats game (Ratón y Gatos) is an entertaining strategy game played on a chess board. This implementation uses CLIPS (C Language Integrated Production System) as an expert system to provide intelligent AI for the cats, making it a challenging single-player experience.
+
+The game features asymmetric gameplay where one player controls a mouse trying to escape, while four cats work together to trap it.
+
+## Board Layout
+
+The game is played on a standard 8x8 chess board:
+
+- **Only black squares are used** for gameplay
+- White squares are not accessible to any pieces
+- The board contains 32 playable black squares arranged in a checkerboard pattern
+- Row and column numbers (1-8) are used to identify positions
+
+<Info>
+The game uses diagonal movement only, similar to checkers, which is why only black squares are used.
+</Info>
+
+## Piece Setup
+
+### Initial Position
+
+Two players are needed to set up the game:
+
+**The Four Cats:**
+- Positioned at one end of the board (row 8)
+- Occupy all four black squares in the first row
+- Specifically placed at positions: (8,1), (8,3), (8,5), and (8,7)
+- All cats use the same color pieces
+
+**The Mouse:**
+- Positioned at the opposite end of the board (row 1)
+- Can start on any black square in the first row
+- Default starting position: (1,4)
+- Uses a different colored piece from the cats
+
+```
+ ------- ------- ------- ------- ------- ------- ------- -------
+| /\\_/\ |       | /\\_/\ |       | /\\_/\ |       | /\\_/\ |       |
+|( o.o )|       |( o.o )|       |( o.o )|       |( o.o )|       | 8
+| > ^ < |       | > ^ < |       | > ^ < |       | > ^ < |       |
+ ------- ------- ------- ------- ------- ------- ------- -------
+|       | . . . |       | . . . |       | . . . |       | . . . |
+|       | . . . |       | . . . |       | . . . |       | . . . | 7
+|       | . . . |       | . . . |       | . . . |       | . . . |
+ ------- ------- ------- ------- ------- ------- ------- -------
+| . . . |       | . . . |       | . . . |       | . . . |       |
+| . . . |       | . . . |       | . . . |       | . . . |       | 6
+| . . . |       | . . . |       | . . . |       | . . . |       |
+ ------- ------- ------- ------- ------- ------- ------- -------
+|       | . . . |       | . . . |       | . . . |       | . . . |
+|       | . . . |       | . . . |       | . . . |       | . . . | 5
+|       | . . . |       | . . . |       | . . . |       | . . . |
+ ------- ------- ------- ------- ------- ------- ------- -------
+| . . . |       | . . . |       | . . . |       | . . . |       |
+| . . . |       | . . . |       | . . . |       | . . . |       | 4
+| . . . |       | . . . |       | . . . |       | . . . |       |
+ ------- ------- ------- ------- ------- ------- ------- -------
+|       | . . . |       | . . . |       | . . . |       | . . . |
+|       | . . . |       | . . . |       | . . . |       | . . . | 3
+|       | . . . |       | . . . |       | . . . |       | . . . |
+ ------- ------- ------- ------- ------- ------- ------- -------
+| . . . |       | . . . |       | . . . |       | . . . |       |
+| . . . |       | . . . |       | . . . |       | . . . |       | 2
+| . . . |       | . . . |       | . . . |       | . . . |       |
+ ------- ------- ------- ------- ------- ------- ------- -------
+|       |(_)_(_)|       | . . . |       | . . . |       | . . . |
+|       | (o o) |       | . . . |       | . . . |       | . . . | 1
+|       |==\\o/==|       | . . . |       | . . . |       | . . . |
+ ------- ------- ------- ------- ------- ------- ------- -------
+    1       2       3       4       5       6       7       8
+```
+
+## Turn-Based Gameplay Flow
+
+The game follows a strict alternating turn sequence:
+
+<Steps>
+  <Step title="Mouse moves first">
+    The mouse always takes the first turn. The player controlling the mouse selects a valid diagonal square to move to.
+  </Step>
+  
+  <Step title="Cat responds">
+    After the mouse moves, the AI (or second player) moves one of the four cats. The cats can only move forward.
+  </Step>
+  
+  <Step title="Turns alternate">
+    Play continues with the mouse and cats alternating turns until one side achieves their victory condition.
+  </Step>
+</Steps>
+
+<Note>
+In this CLIPS implementation, the cat AI is designed to win 100% of games when playing optimally, making it a challenging puzzle for the human player.
+</Note>
+
+## Game Objective
+
+- **Mouse Goal:** Reach any black square on row 8 (the cats' starting row)
+- **Cats Goal:** Trap the mouse so it has no legal moves available
+
+The game combines tactical movement with strategic planning, requiring the mouse player to find creative paths while the cats work cooperatively to close off escape routes.

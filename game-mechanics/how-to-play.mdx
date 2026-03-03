@@ -1,0 +1,250 @@
+---
+title: 'How to Play'
+description: 'Practical guide to playing the Mouse and Cats game'
+---
+
+## Starting a Game
+
+The game is executed using CLIPS version 6.4 or higher.
+
+<Steps>
+  <Step title="Load the game file">
+    Open the CLIPS console and load the `raton_y_gatos.clp` file into the environment.
+  </Step>
+  
+  <Step title="Start the game">
+    Execute the command to begin playing:
+    
+    ```clips
+    (jugar)
+    ```
+    
+    This command will reset the game state and start a new match.
+  </Step>
+  
+  <Step title="View instructions (optional)">
+    If you want to see the game instructions before playing, use:
+    
+    ```clips
+    (instrucciones)
+    ```
+    
+    This will display the complete rules and then automatically start the game.
+  </Step>
+</Steps>
+
+<Info>
+The `(jugar)` command internally calls `(clear-window)`, `(reset)`, and `(run)` to initialize the game state.
+</Info>
+
+## Entering Moves
+
+When it's your turn to move the mouse, the game will prompt you for input.
+
+### Move Input Format
+
+You'll be asked to enter two numbers:
+
+```
+Ingresa la fila y la columna donde se moverá el ratón:
+Fila    [1-8] : ▊
+Columna [1-8] : ▊
+```
+
+<Steps>
+  <Step title="Enter the row number">
+    Type a number from 1 to 8 representing the destination row.
+  </Step>
+  
+  <Step title="Enter the column number">
+    Type a number from 1 to 8 representing the destination column.
+  </Step>
+  
+  <Step title="Move is validated and executed">
+    The game will validate your move and either:
+    - Execute the move if valid
+    - Display an error message and ask again if invalid
+  </Step>
+</Steps>
+
+### Example Move Sequence
+
+Starting from position (1, 4), valid first moves for the mouse:
+
+**Move to forward-right:**
+```
+Fila    [1-8] : 2
+Columna [1-8] : 5
+```
+
+**Move to forward-left:**
+```
+Fila    [1-8] : 2
+Columna [1-8] : 3
+```
+
+<Note>
+From the starting position (1, 4), the mouse can only move forward since there are no diagonal squares behind it (row 0 doesn't exist).
+</Note>
+
+## Reading the Board Display
+
+After each move, the game displays an ASCII art representation of the board.
+
+### Board Components
+
+**Row numbers:** Displayed on the right side (1-8, bottom to top)
+
+**Column numbers:** Displayed at the bottom (1-8, left to right)
+
+**Black squares (empty):** Shown as dots
+```
+| . . . |
+| . . . |
+| . . . |
+```
+
+**White squares:** Shown as empty space
+```
+|       |
+|       |
+|       |
+```
+
+**Cat pieces:** ASCII cat face
+```
+| /\\_/\ |
+|( o.o )|
+| > ^ < |
+```
+
+**Mouse piece:** ASCII mouse face  
+```
+|(_)_(_)|
+| (o o) |
+|==\\o/==|
+```
+
+### Board Notation Reference
+
+Internal notation used by the system:
+
+| Symbol | Meaning |
+|--------|--------|
+| `0` | White square (not playable) |
+| `1` | Black square (empty, playable) |
+| `4` | Black square with mouse |
+| `5` | Black square with cat |
+
+<Info>
+You won't see these numbers during gameplay—they're used internally by the CLIPS expert system. The ASCII art display shows the visual representation.
+</Info>
+
+## Gameplay Examples
+
+Here's what a typical game sequence looks like:
+
+### Opening Move
+
+After starting the game with `(jugar)`, you'll see the initial board with the mouse at (1, 4) and four cats at row 8.
+
+**Your input:**
+```
+Ingresa la fila y la columna donde se moverá el ratón:
+Fila    [1-8] : 2
+Columna [1-8] : 5
+```
+
+**Result:** The mouse moves diagonally forward-right to position (2, 5).
+
+### AI Response
+
+After your move, the AI will automatically:
+1. Analyze the board position
+2. Select the optimal cat to move
+3. Execute the cat's move
+4. Display the updated board
+5. Prompt you for your next move
+
+### Mid-Game Position
+
+As the game progresses, the cats will advance toward you:
+
+```
+ ------- ------- ------- ------- ------- ------- ------- -------
+|       | . . . |       | . . . |       | . . . |       | . . . |
+|       | . . . |       | . . . |       | . . . |       | . . . | 8
+|       | . . . |       | . . . |       | . . . |       | . . . |
+ ------- ------- ------- ------- ------- ------- ------- -------
+| . . . |       | . . . |       | . . . |       | . . . |       |
+| . . . |       | . . . |       | . . . |       | . . . |       | 7
+| . . . |       | . . . |       | . . . |       | . . . |       |
+ ------- ------- ------- ------- ------- ------- ------- -------
+|       |(_)_(_)|       | . . . |       | . . . |       | . . . |
+|       | (o o) |       | . . . |       | . . . |       | . . . | 6
+|       |==\\o/==|       | . . . |       | . . . |       | . . . |
+ ------- ------- ------- ------- ------- ------- ------- -------
+| /\\_/\ |       | /\\_/\ |       | /\\_/\ |       | /\\_/\ |       |
+|( o.o )|       |( o.o )|       |( o.o )|       |( o.o )|       | 5
+| > ^ < |       | > ^ < |       | > ^ < |       | > ^ < |       |
+ ------- ------- ------- ------- ------- ------- ------- -------
+```
+
+## Common Error Messages
+
+### Position Out of Range
+
+```
+Posición fuera del rango del tablero...
+INGRESE NUEVAMENTE.
+```
+
+**Cause:** You entered row or column numbers outside 1-8.
+
+**Solution:** Enter valid coordinates within the board boundaries.
+
+### Position Out of Reach
+
+```
+Posición fuera de alcance del ratón...
+INGRESE NUEVAMENTE.
+```
+
+**Cause:** The square you selected is not a valid diagonal move from your current position.
+
+**Solution:** Choose one of the four adjacent diagonal squares.
+
+### Position Already Occupied
+
+```
+la posición ya está ocupada...
+INGRESE NUEVAMENTE.
+```
+
+**Cause:** You tried to move to a square where a cat is located.
+
+**Solution:** Select an empty black square.
+
+<Warning>
+The game will keep prompting you until you enter a valid move. Take your time to identify available diagonal squares.
+</Warning>
+
+## Tips for Playing
+
+<AccordionGroup>
+  <Accordion title="Plan ahead">
+    Think several moves ahead. The cats work together, so anticipate how they'll coordinate to trap you.
+  </Accordion>
+  
+  <Accordion title="Use the edges carefully">
+    Corner and edge positions can limit your escape options. Try to maintain access to multiple diagonal paths.
+  </Accordion>
+  
+  <Accordion title="Remember cats can't move backward">
+    Once a cat passes a row, it can never return to that row. Use this to create safe zones.
+  </Accordion>
+  
+  <Accordion title="Count available moves">
+    Always ensure you have at least one legal move available. Getting trapped means instant defeat.
+  </Accordion>
+</AccordionGroup>

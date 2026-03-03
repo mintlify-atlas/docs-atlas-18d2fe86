@@ -1,0 +1,134 @@
+---
+title: 'Game Rules'
+description: 'Detailed rules for playing Mouse and Cats'
+---
+
+## Movement Rules
+
+Understanding how each piece can move is essential to playing the game effectively.
+
+### Mouse Movement
+
+The mouse has the most flexible movement options:
+
+- **Direction:** Can move diagonally in any of the four diagonal directions
+- **Range:** Can only move to adjacent diagonal squares (one square at a time)
+- **Restrictions:** Cannot move to squares already occupied by cats
+- **Available squares:** Must move to black squares only
+
+**The four possible diagonal directions:**
+- Forward-left (increasing row, decreasing column)
+- Forward-right (increasing row, increasing column)  
+- Backward-left (decreasing row, decreasing column)
+- Backward-right (decreasing row, increasing column)
+
+<Info>
+The mouse can move both forward and backward, giving it tactical flexibility to evade cats.
+</Info>
+
+### Cat Movement
+
+Cats have more restrictive movement:
+
+- **Direction:** Can only move diagonally forward (toward row 1)
+- **Range:** One square at a time to adjacent diagonal squares
+- **Restrictions:** 
+  - Cannot move to squares occupied by the mouse
+  - Cannot move to squares occupied by other cats
+  - Cannot move backward or sideways
+- **Available squares:** Must move to black squares only
+
+**The two possible diagonal directions for cats:**
+- Forward-left (decreasing row, decreasing column)
+- Forward-right (decreasing row, increasing column)
+
+<Warning>
+Cats cannot move backward! Once a cat moves forward, it cannot return to its previous position. This limitation is key to the mouse's strategy.
+</Warning>
+
+## How to Play
+
+The following rules are extracted from the official game instructions:
+
+### Turn Order and Movement Sequence
+
+1. **The mouse is the first to move.** At any time, the mouse can move to any of the adjacent black squares, as long as the square is not already occupied by a cat.
+
+2. **After the mouse moves, it's one of the cats' turn.** The cats can only move forward, as long as the square is not occupied by the mouse or any of the other cats.
+
+3. **When one of the cats has moved, it will be the mouse's turn again,** and so on successively.
+
+4. **The mouse wins if it manages to reach the opposite side,** that is, any of the squares from which the cats started.
+
+5. **The cats win if they manage to trap the mouse,** such that the mouse can no longer move.
+
+<Note>
+These rules come directly from the source code's instruction system (lines 51-66 in raton_y_gatos.clp).
+</Note>
+
+## Movement Restrictions
+
+### Occupied Squares
+
+No piece can move to a square that is already occupied:
+
+- **Mouse:** Cannot move to any square containing a cat
+- **Cats:** Cannot move to squares containing the mouse or other cats
+
+<Info>
+If you try to move to an occupied square, the game will display: "la posición ya está ocupada..." (the position is already occupied) and ask you to enter your move again.
+</Info>
+
+### Board Boundaries
+
+All pieces must remain within the 8x8 board:
+
+- Row numbers: 1-8
+- Column numbers: 1-8
+- Moves outside these ranges are invalid
+
+### Valid Diagonal Movement
+
+For a move to be valid:
+
+1. The destination must be exactly one square away diagonally
+2. Both the row and column must change by exactly 1
+3. The destination must be a black square (sum of row + column must be even)
+
+**Mathematical validation:**
+```
+|new_row - current_row| = 1
+|new_column - current_column| = 1
+new_row ≠ current_row
+new_column ≠ current_column
+```
+
+<Warning>
+If you attempt an invalid diagonal move, the game will display: "Posición fuera de alcance del ratón..." (Position out of reach of the mouse) and prompt you to enter a new position.
+</Warning>
+
+## Turn Alternation
+
+### Strict Alternation
+
+The game enforces strict turn alternation:
+
+- Mouse cannot move twice in a row
+- Only one cat moves per turn (even though there are four cats)
+- No skipping turns allowed
+
+### Cat Selection
+
+In this CLIPS implementation:
+
+- The AI automatically selects which cat to move based on optimal strategy
+- The expert system uses multiple rules to determine the best cat and move
+- Strategies include: blocking escape routes, advancing in formation, and trapping the mouse
+
+## Game State
+
+The game tracks several important states:
+
+- **Current piece positions** for the mouse and all four cats
+- **Available moves** for the current player
+- **Win/loss conditions** checked after each move

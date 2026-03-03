@@ -1,0 +1,193 @@
+---
+title: Installation
+description: Install CLIPS 6.4 and set up the Mouse and Cats expert system game
+---
+
+# Installation Guide
+
+This guide will walk you through installing CLIPS and loading the Mouse and Cats game. The entire process takes just a few minutes.
+
+## Prerequisites
+
+The game requires **CLIPS version 6.4** to run properly. CLIPS is a lightweight, cross-platform production system that runs on Windows, macOS, and Linux.
+
+<Note>
+  CLIPS 6.4 is specifically required for this game. Newer or older versions may not be compatible with the rule syntax used in the source code.
+</Note>
+
+## Step-by-Step Installation
+
+<Steps>
+  <Step title="Download CLIPS 6.4">
+    Visit the official CLIPS website and download version 6.4 for your operating system:
+    
+    **Official CLIPS 6.4 Download**: [http://www.clipsrules.net/CLIPS64.html](http://www.clipsrules.net/CLIPS64.html)
+    
+    Available for:
+    - Windows (executable installer)
+    - macOS (source code - requires compilation)
+    - Linux (source code - requires compilation)
+    
+    <Note>
+      Windows users can download the pre-built executable. macOS and Linux users will need to compile from source using the included instructions.
+    </Note>
+  </Step>
+
+  <Step title="Install CLIPS">
+    Follow the installation instructions for your platform:
+    
+    **Windows:**
+    - Run the downloaded installer
+    - Follow the installation wizard
+    - CLIPS will be available from the Start Menu
+    
+    **macOS/Linux:**
+    ```bash
+    # Extract the downloaded archive
+    tar -xzf clips_core_source_640.tar.gz
+    cd clips_core_source_640
+    
+    # Compile CLIPS
+    cd core
+    make
+    
+    # The clips executable will be in the current directory
+    ./clips
+    ```
+  </Step>
+
+  <Step title="Download the Game File">
+    Obtain the `raton_y_gatos.clp` file from the repository:
+    
+    ```bash
+    # Clone the repository
+    git clone https://github.com/geovannyzp/SistemaExperto-Raton_y_Gatos.git
+    cd SistemaExperto-Raton_y_Gatos
+    ```
+    
+    Or download the file directly from GitHub and save it to a convenient location on your computer.
+  </Step>
+
+  <Step title="Launch CLIPS">
+    Start the CLIPS environment:
+    
+    **Windows:**
+    - Open CLIPS from the Start Menu or desktop shortcut
+    - The CLIPS command prompt will appear
+    
+    **macOS/Linux:**
+    ```bash
+    ./clips
+    ```
+    
+    You should see the CLIPS prompt:
+    ```
+    CLIPS>
+    ```
+  </Step>
+
+  <Step title="Load the Game">
+    In the CLIPS console, load the game file using the `load` command:
+    
+    ```clips
+    CLIPS> (load "raton_y_gatos.clp")
+    ```
+    
+    <Note>
+      Make sure to provide the full path to the file if it's not in the current directory. For example:
+      
+      `(load "C:/Games/raton_y_gatos.clp")` on Windows
+      
+      `(load "/home/user/games/raton_y_gatos.clp")` on Linux/macOS
+    </Note>
+    
+    If successful, CLIPS will load all 2,110 lines of rules, templates, and functions. You should see output indicating the definitions are being processed.
+  </Step>
+
+  <Step title="Verify Installation">
+    Test that the game loaded correctly by running:
+    
+    ```clips
+    CLIPS> (instrucciones)
+    ```
+    
+    This should display the game instructions and start a new game. If you see the game instructions appear, installation was successful!
+  </Step>
+</Steps>
+
+## Installation Verification
+
+After loading the game, verify everything is working:
+
+<CodeGroup>
+```clips Check Installation
+CLIPS> (load "raton_y_gatos.clp")
+***********************
+; Loading file: raton_y_gatos.clp
+...
+TRUE
+CLIPS>
+```
+
+```clips Start Game
+CLIPS> (jugar)
+; Game board appears with cats at top, mouse at bottom
+```
+
+```clips View Instructions
+CLIPS> (instrucciones)
+::::::::::::::::::::::::::::JUEGO DEL RATON Y LOS GATOS::::::::::::::::::::::::
+
+INSTRUCCIONES
+...
+```
+</CodeGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Error: 'load' command not found">
+    Make sure you're using CLIPS 6.4 and the CLIPS console is running. The `(load)` command is a built-in CLIPS function.
+  </Accordion>
+
+  <Accordion title="Error: File not found">
+    Verify the path to `raton_y_gatos.clp` is correct. Use absolute paths if needed:
+    
+    ```clips
+    (load "C:/full/path/to/raton_y_gatos.clp")
+    ```
+    
+    On Windows, use forward slashes `/` or double backslashes `\\\\` in paths.
+  </Accordion>
+
+  <Accordion title="Error: Syntax errors when loading">
+    This usually indicates a CLIPS version mismatch. Ensure you're using exactly version 6.4, as the rule syntax may not be compatible with other versions.
+  </Accordion>
+
+  <Accordion title="Game loads but commands don't work">
+    Make sure you're typing the commands exactly as shown, with parentheses:
+    
+    - `(jugar)` - not `jugar`
+    - `(instrucciones)` - not `instrucciones`
+    
+    CLIPS requires parentheses for all function calls.
+  </Accordion>
+</AccordionGroup>
+
+## What's Loaded?
+
+When you load `raton_y_gatos.clp`, CLIPS processes:
+
+- **2 main functions**: `(jugar)` to start a game, `(instrucciones)` to view instructions
+- **Multiple templates**: `casilla` for board squares, `pieza` for piece graphics
+- **Initial facts**: Board state, piece positions (mouse at row 1, four cats at row 8)
+- **15+ production rules**: Encoding cat AI strategy with different priority levels
+- **ASCII art definitions**: Visual representations of the mouse, cats, and board squares
+
+## Next Steps
+
+Now that CLIPS is installed and the game is loaded, you're ready to play:
+
+<Card title="Quick Start Guide" icon="rocket" href="/quickstart">
+  Learn how to play your first game and understand the commands
+</Card>

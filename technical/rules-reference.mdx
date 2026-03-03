@@ -1,0 +1,425 @@
+---
+title: 'Rules Reference'
+description: 'Complete reference for all game rules and AI logic'
+icon: 'gavel'
+---
+
+## Rule Categories
+
+The game contains 15 rules organized by function:
+
+1. **Initialization** - Board setup
+2. **Display** - Board rendering
+3. **Player Moves** - Human input and validation
+4. **AI Strategy** - Cat movement logic
+5. **Endgame** - Win condition detection
+
+---
+
+## Initialization Rules
+
+<Accordion title="ingresar-tablero-en-blanco" icon="chess-board">
+
+**Purpose**: Creates the initial 8x8 checkerboard with alternating black and white squares.
+
+**Conditions**:
+- `(ingresar-tablero)` control fact exists
+
+**Actions**:
+1. Generates all 64 squares using nested loops
+2. Assigns valor 0 (white) or 1 (black) based on position parity
+3. Asserts `(ingresar-pos-iniciales)` to trigger piece placement
+
+**Code**:
+```clips
+(defrule ingresar-tablero-en-blanco
+  ?h <- (ingresar-tablero)
+  =>
+  (retract ?h)
+  (assert (ingresar-pos-iniciales))
+  
+  (loop-for-count (?i 1 8)do
+    (loop-for-count (?j 1 8)do
+      (if (eq(mod (+ ?i ?j) 2) 0)
+        then
+          (assert (casilla (fila ?i)(columna ?j)(valor 0)))
+        else
+          (assert (casilla (fila ?i)(columna ?j)(valor 1)))
+      )
+    )
+  )
+)
+```
+
+**Location**: raton_y_gatos.clp:164-207
+
+</Accordion>
+
+<Accordion title="posiciones-piezas-iniciales" icon="chess">
+
+**Purpose**: Places the mouse and four cats in their starting positions.
+
+**Conditions**:
+- `(ingresar-pos-iniciales)` control fact exists
+- Captures fact indices for row 1, col 4 (mouse) and row 8, cols 1,3,5,7 (cats)
+
+**Actions**:
+1. Modifies mouse square to valor 4
+2. Modifies cat squares to valor 5 with unique IDs (5 1, 5 2, 5 3, 5 4)
+3. Retracts control fact
+
+**Code**:
+```clips
+(defrule posiciones-piezas-iniciales
+  ?h <- (ingresar-pos-iniciales)
+  ?raton <- (casilla (fila 1)(columna 4)(valor ?))
+  ?gato1 <- (casilla (fila 8)(columna 1)(valor ?))
+  ?gato2 <- (casilla (fila 8)(columna 3)(valor ?))
+  ?gato3 <- (casilla (fila 8)(columna 5)(valor ?))
+  ?gato4 <- (casilla (fila 8)(columna 7)(valor ?))
+  =>
+  (modify ?raton (valor 4))
+  (modify ?gato1 (valor 5 1))
+  (modify ?gato2 (valor 5 2))
+  (modify ?gato3 (valor 5 3))
+  (modify ?gato4 (valor 5 4))
+  (retract ?h)
+)
+```
+
+**Location**: raton_y_gatos.clp:209-259
+
+</Accordion>
+
+---
+
+## Display Rules
+
+<Accordion title="actualizar-tablero" icon="display">
+
+**Purpose**: Renders the board to console using ASCII art in a 3-pass system.
+
+**Conditions**:
+- `(imprime ?i ?j)` where i*j ≤ 64
+- Matching pieza fact for current square's valor
+- `(parteImprimir ?part)` indicates which line to print (1-3)
+- `(actualizar-tablero)` control fact exists
+
+**Actions**:
+1. Prints appropriate part (1, 2, or 3) of the piece ASCII art
+2. Advances column, or wraps to next row and next part
+3. After completing all 64 squares × 3 parts, asserts `(pedir-movimiento-raton)`
+
+**Rendering Logic**:
+- Each square is rendered in 3 horizontal passes
+- Borders and row numbers are added automatically
+- Column indices printed at bottom
+
+**Location**: raton_y_gatos.clp:262-363
+
+</Accordion>
+
+---
+
+## Player Move Rules
+
+<Accordion title="pedir-movimiento-raton" icon="hand-pointer">
+
+**Purpose**: Prompts player to enter mouse movement destination.
+
+**Conditions**:
+- `(pedir-movimiento-raton)` control fact exists
+- Captures current mouse position
+
+**Actions**:
+1. Prompts for row and column input
+2. Validates input is within board bounds (1-8)
+3. Validates destination is within mouse's diagonal reach
+4. Asserts `(fila-columna-a-mover row col)` and `(comprobar-casilla-ocupada)`
+
+**Validation**:
+- Must be exactly one diagonal square away from current position
+- Row and column must both change
+- Sum of row difference + column difference must equal 2
+
+**Location**: raton_y_gatos.clp:367-439
+
+</Accordion>
+
+<Accordion title="comprobar-casilla-ocupada" icon="check-circle">
+
+**Purpose**: Verifies the destination square is unoccupied.
+
+**Conditions**:
+- `(comprobar-casilla-ocupada)` control fact exists
+- `(fila-columna-a-mover ?f ?c)` from player input
+- Captures valor of destination square
+
+**Actions**:
+- If valor = 1 (empty black square): Assert `(ejecutar-movimiento-jugador-raton)`
+- If occupied: Print error, re-assert `(pedir-movimiento-raton)` and `(actualizar-tablero)`
+
+**Location**: raton_y_gatos.clp:441-485
+
+</Accordion>
+
+<Accordion title="ejecutar-movimiento-jugador-raton" icon="arrow-right">
+
+**Purpose**: Executes the validated mouse movement.
+
+**Conditions**:
+- `(ejecutar-movimiento-jugador-raton)` control fact exists
+- `(fila-columna-a-mover ?f1 ?c1)` with destination
+- Captures both destination and current mouse squares
+
+**Actions**:
+1. Modifies destination square to valor 4 (mouse)
+2. Modifies current square to valor 1 (empty black)
+3. Asserts `(calcular-esquinas-raton)` to trigger AI response
+
+**Location**: raton_y_gatos.clp:487-540
+
+</Accordion>
+
+---
+
+## AI Strategy Rules
+
+<Accordion title="buscar-diagonales-gatos" icon="magnifying-glass">
+
+**Purpose**: Calculates the two diagonal forward squares for each cat.
+
+**Conditions**:
+- `(buscar-diagonales-gatos)` control fact exists
+- Captures each cat's position
+
+**Actions**:
+- For each cat, asserts `(esquina-gato ?idGato ?filaArriba ?colIzq ?colDer)`
+- Handles edge cases (cats at column 1 or 8)
+- Cats on row 1 have no forward moves
+
+**Location**: raton_y_gatos.clp:542-610
+
+</Accordion>
+
+<Accordion title="ejecutar-movimiento-completar-fila-gatos" icon="chess-knight">
+
+**Purpose**: Implements "block formation" strategy - cats advance together as a solid line.
+
+**Salience**: Default (0)
+
+**Strategy**:
+1. Identifies cats with only ONE available forward diagonal
+2. If multiple cats qualify, moves the one farthest from mouse
+3. Moves toward the available diagonal
+
+**Conditions**:
+- Mouse position
+- All four cat diagonal squares
+- Values of all eight diagonal destinations
+
+**Actions**:
+- Determines which cat(s) have exactly one open diagonal
+- Compares row distances to mouse to pick deepest cat
+- Asserts `(fila-columna-mover-gatos row col catID)` and `(ejecutar-movimiento-maquina-gato)`
+- Re-asserts `(buscar-diagonales-gatos)`, `(semi-encerrar-raton)`, `(gato-mas-alejado)`
+
+**Location**: raton_y_gatos.clp:612-938
+
+<Info>
+  This is the primary AI strategy that keeps cats advancing as a coordinated group.
+</Info>
+
+</Accordion>
+
+<Accordion title="mover-gato-mas-alejado-raton" icon="arrows-alt">
+
+**Purpose**: Moves the cat farthest from mouse when no other strategy applies.
+
+**Salience**: -10 (lowest priority)
+
+**Conditions**:
+- `(gato-mas-alejado)` control fact exists
+- All cat positions
+- Mouse column position
+
+**Actions**:
+1. Calculates column distance from each cat to mouse
+2. If any cat is >2 columns away, moves that cat diagonally toward mouse
+3. Direction based on which side of board mouse is on (column 4 threshold)
+4. If all cats close, moves cat 4 to its right diagonal
+
+**Location**: raton_y_gatos.clp:941-1108
+
+</Accordion>
+
+<Accordion title="semi-encerrar-raton-que-esta-en-medio" icon="compress">
+
+**Purpose**: Detects when mouse is surrounded on both sides and tightens the formation.
+
+**Pattern Detected**:
+```
+|#|_|5|_|4|_|5|_|
+|_|#|_|5|_|5|_|#|
+```
+
+**Conditions**:
+- `(semi-encerrar-raton)` control fact exists
+- Tests for specific cat formation: two cats one row above mouse flanking it, two cats same row as mouse on outer edges
+
+**Actions**:
+- Moves the cat 2 columns away from mouse (on mouse's row) diagonally forward toward mouse
+- Direction depends on which side of board mouse is on
+
+**Location**: raton_y_gatos.clp:1110-1223
+
+</Accordion>
+
+<Accordion title="calcular-esquinas-raton" icon="calculator">
+
+**Purpose**: Computes the 2-4 diagonal squares around the mouse.
+
+**Conditions**:
+- `(calcular-esquinas-raton)` control fact exists
+- Mouse position
+
+**Actions**:
+- Calculates up to 4 diagonal squares (fewer if mouse is on edge/corner)
+- Asserts `(esquinasRaton ?filaInf ?filaSup ?colIzq ?colDer)`
+- Triggers `(cubrirPosibleAvanceRaton)` and `(encerrar-raton)` checks
+
+**Edge Cases**:
+- Row 1: only 2 upward diagonals
+- Column 1 or 8: only 2 diagonals
+- Row 1 + Column 8: only 1 diagonal (corner)
+
+**Location**: raton_y_gatos.clp:1226-1300
+
+</Accordion>
+
+<Accordion title="encerrar-raton" icon="lock">
+
+**Purpose**: Detects endgame - when mouse has only ONE available diagonal and a cat can reach it.
+
+**Salience**: 10 (highest priority)
+
+**Conditions**:
+- `(encerrar-raton)` control fact exists
+- `(esquinasRaton)` fact with all mouse diagonal values
+- All cat positions
+
+**Actions**:
+1. Checks each of 4 diagonals to find the one with valor 1
+2. Confirms exactly 3 diagonals are blocked
+3. Checks if any cat's forward diagonal matches that open square
+4. If yes: moves that cat and asserts `(finalizar-juego)`
+
+**Win Condition**: This rule firing means the cats have successfully trapped the mouse.
+
+**Location**: raton_y_gatos.clp:1302-1678
+
+</Accordion>
+
+<Accordion title="cubrir-posible-avance-raton" icon="shield">
+
+**Purpose**: Detects and responds to 4 specific tactical patterns to prevent mouse escape.
+
+**Patterns**:
+
+1. **3D Plane Right**: Cat directly in front of mouse, with formation extending right
+2. **Three in Row One Down**: Three cats in horizontal line 2 rows above mouse
+3. **3D Plane Left**: Cat directly in front, formation extending left  
+4. **Snake Pattern**: Cats in S-shaped formation
+5. **Straggler Recovery**: Catches cats that fell behind and brings them forward
+
+**Actions**:
+- Each pattern has specific cat movement to maintain trap integrity
+- Typically moves a cat to block mouse's most promising escape route
+
+**Location**: raton_y_gatos.clp:1680-2034
+
+<Warning>
+  This rule contains complex spatial pattern matching. Each pattern is extensively documented with ASCII diagrams in the source code.
+</Warning>
+
+</Accordion>
+
+<Accordion title="ejecutar-movimiento-maquina-gato" icon="robot">
+
+**Purpose**: Executes the cat movement determined by AI strategy rules.
+
+**Conditions**:
+- `(buscar-diagonales-gatos)` control fact
+- `(ejecutar-movimiento-maquina-gato)` control fact
+- `(fila-columna-mover-gatos ?row ?col ?catID)` with movement details
+- Destination square
+
+**Actions**:
+1. Retrieves cat's valor using `fact-slot-value`
+2. Modifies destination square to cat's valor
+3. Modifies cat's current square to valor 1 (empty)
+4. Prints move notification with cat ID and destination
+5. Asserts `(actualizar-tablero)` to refresh display
+
+**Location**: raton_y_gatos.clp:2056-2110
+
+</Accordion>
+
+---
+
+## Endgame Rules
+
+<Accordion title="finalizar-juego" icon="flag-checkered">
+
+**Purpose**: Displays game over message when cats win.
+
+**Conditions**:
+- `(finalizar-juego)` fact exists (asserted by `encerrar-raton` rule)
+
+**Actions**:
+1. Prints ASCII art victory message:
+```
+GAME OVER...
+GANAN LOS GATOS
+(THE CATS WIN)
+```
+2. Prompts player to type `(jugar)` to start new game
+3. Calls `(halt)` to stop rule execution
+
+**Location**: raton_y_gatos.clp:2036-2053
+
+<Note>
+  The game currently only detects cat victory. Mouse victory (reaching row 8) is not implemented in the rule set.
+</Note>
+
+</Accordion>
+
+---
+
+## Rule Execution Order
+
+Rules fire based on CLIPS conflict resolution strategy:
+
+1. **Salience** (priority): Higher salience fires first
+   - `encerrar-raton`: salience 10
+   - Most rules: salience 0 (default)
+   - `mover-gato-mas-alejado-raton`: salience -10
+
+2. **Recency**: More recently asserted facts have priority
+
+3. **Specificity**: Rules with more conditions have priority
+
+### Typical Turn Sequence
+
+1. `pedir-movimiento-raton` - Get player input
+2. `comprobar-casilla-ocupada` - Validate move
+3. `ejecutar-movimiento-jugador-raton` - Apply move
+4. `calcular-esquinas-raton` - Analyze new mouse position
+5. `encerrar-raton` - Check for immediate win (highest priority)
+6. `cubrirPosibleAvanceRaton` - Check tactical patterns
+7. `buscar-diagonales-gatos` - Calculate cat options
+8. `ejecutar-movimiento-completar-fila-gatos` - Main strategy
+9. `semi-encerrar-raton` - Tightening formation
+10. `mover-gato-mas-alejado-raton` - Fallback strategy (lowest priority)
+11. `ejecutar-movimiento-maquina-gato` - Apply cat move
+12. `actualizar-tablero` - Redraw board

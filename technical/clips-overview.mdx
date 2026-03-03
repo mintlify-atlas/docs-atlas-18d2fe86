@@ -1,0 +1,131 @@
+---
+title: 'CLIPS Language Overview'
+description: 'Introduction to CLIPS programming language used in the Mouse and Cats game'
+icon: 'code'
+---
+
+## What is CLIPS?
+
+CLIPS (C Language Integrated Production System) is a forward-chaining rule-based programming language designed for building expert systems. It was developed at NASA's Johnson Space Center and is particularly well-suited for implementing AI game logic.
+
+The Mouse and Cats game leverages CLIPS' pattern matching and rule-based inference engine to create intelligent cat AI that can trap the mouse player.
+
+## Version Requirement
+
+<Note>
+  This game requires **CLIPS 6.4** to run properly. Make sure you have the correct version installed.
+</Note>
+
+## Basic CLIPS Syntax
+
+### Comments
+
+```clips
+; Single line comment starts with semicolon
+
+; Multi-line documentation comments
+; are just multiple single-line comments
+```
+
+### Facts and Templates
+
+Facts are the basic data units in CLIPS. Templates define the structure of facts:
+
+```clips
+(deftemplate person
+  "Defines a person"
+  (slot name (type STRING))
+  (slot age (type NUMBER))
+)
+
+; Creating a fact
+(assert (person (name "John") (age 30)))
+```
+
+### Rules
+
+Rules define conditional logic that fires when patterns match:
+
+```clips
+(defrule example-rule
+  "Rule documentation"
+  ?fact <- (condition-pattern)
+  =>
+  (printout t "Action executed" crlf)
+  (retract ?fact)
+)
+```
+
+### Functions
+
+Functions encapsulate reusable logic:
+
+```clips
+(deffunction my-function (?param1 ?param2)
+  "Function documentation"
+  (+ ?param1 ?param2)
+)
+```
+
+## Running CLIPS Commands
+
+Once you have CLIPS 6.4 installed and the game loaded:
+
+### Starting the Game
+
+```clips
+; View instructions first
+(instrucciones)
+
+; Or jump straight into playing
+(jugar)
+```
+
+### Common CLIPS Commands
+
+```clips
+; Load the game file
+(load "raton_y_gatos.clp")
+
+; Reset the environment
+(reset)
+
+; Run all activated rules
+(run)
+
+; View all facts
+(facts)
+
+; View all rules
+(rules)
+
+; Clear the screen
+(clear-window)
+```
+
+### Interactive Game Commands
+
+During gameplay:
+- Enter row number (1-8) when prompted for mouse movement
+- Enter column number (1-8) to complete the move
+- The cats will automatically respond with AI-calculated moves
+
+## Official CLIPS Documentation
+
+For comprehensive CLIPS language reference:
+
+<Card title="CLIPS Documentation" icon="book" href="https://www.clipsrules.net/Documentation.html">
+  Official CLIPS 6.4 documentation, user guide, and reference manual
+</Card>
+
+<Card title="CLIPS Expert System" icon="brain" href="https://www.clipsrules.net/">
+  Main CLIPS website with downloads and resources
+</Card>
+
+## Key CLIPS Features Used in This Game
+
+- **Pattern Matching**: Matching board states to trigger appropriate AI moves
+- **Forward Chaining**: Rules automatically fire when conditions are met
+- **Salience**: Priority levels for rules (e.g., endgame detection has highest priority)
+- **Fact Modification**: Updating board state by modifying casilla facts
+- **Procedural Functions**: Game setup and instruction display functions

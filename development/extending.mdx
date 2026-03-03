@@ -1,0 +1,682 @@
+---
+title: 'Extension Guide'
+description: 'Learn how to add new AI strategies, rules, and game variations'
+---
+
+## Overview
+
+Extending the Mouse and Cats game requires understanding CLIPS rule-based programming. This guide covers adding new AI strategies, creating custom rules, implementing variations, and debugging techniques.
+
+## Adding New AI Strategies
+
+The game's AI is composed of multiple strategy rules that fire based on pattern matching.
+
+### Understanding Existing Strategies
+
+Current AI rules (in priority order):
+
+1. **encerrar-raton** (salience 10) - Trap mouse when only one escape exists
+2. **ejecutar-movimiento-completar-fila-gatos** - Advance cats in formation
+3. **semi-encerrar-raton** - Create pincer movements
+4. **cubrir-posible-avance-raton** - Counter specific patterns
+5. **mover-gato-mas-alejado-raton** (salience -10) - Fallback strategy
+
+See: `raton_y_gatos.clp:1302-1678` (trap), `raton_y_gatos.clp:612-938` (formation), `raton_y_gatos.clp:1110-1223` (semi-trap)
+
+### Creating a New Strategy Rule
+
+<Steps>
+  <Step title="Identify the pattern">
+    Determine what board configuration your strategy should respond to.
+    
+    Example: "Move a cat to block the mouse from reaching row 1"
+  </Step>
+  
+  <Step title="Write the rule skeleton">
+    ```clojure
+    (defrule block-mouse-escape
+      "Prevent mouse from reaching the goal row"
+      
+      ; Set appropriate salience (0 is default, higher fires first)
+      (declare (salience 5))
+      
+      ; Pattern matching conditions
+      ?h <- (some-control-fact)  ; Control fact that triggers this strategy
+      
+      ; Get mouse position
+      (casilla (fila ?filaRaton)(columna ?colRaton)(valor 4))
+      
+      ; Get cat positions
+      ?gato1 <- (casilla (fila ?filaGato1)(columna ?colGato1)(valor 5 1))
+      
+      =>
+      ; Actions go here
+    )
+    ```
+  </Step>
+  
+  <Step title="Add pattern conditions">
+    Use the LHS (left-hand side) to match specific board states:
+    
+    ```clojure
+    ; Check if mouse is close to goal row
+    (test (< ?filaRaton 3))
+    
+    ; Check if a cat can intercept
+    (test (= (abs (- ?colGato1 ?colRaton)) 2))
+    ```
+  </Step>
+  
+  <Step title="Implement the action">
+    On the RHS (right-hand side), assert the move:
+    
+    ```clojure
+    =>
+    (retract ?h)  ; Remove control fact
+    
+    ; Calculate new position
+    (bind ?nuevaFila (- ?filaGato1 1))
+    (bind ?nuevaCol ?colRaton)
+    
+    ; Assert the move
+    (assert (fila-columna-mover-gatos ?nuevaFila ?nuevaCol ?gato1))
+    (assert (ejecutar-movimiento-maquina-gato))
+    
+    ; Re-trigger diagonal calculation
+    (assert (buscar-diagonales-gatos))
+    ```
+  </Step>
+  
+  <Step title="Add to the strategy chain">
+    Ensure your rule is triggered by modifying the control fact assertion in `calcular-esquinas-raton` or another appropriate location:
+    
+    ```clojure
+    (assert (block-mouse-escape))  ; Add this alongside other strategy assertions
+    ```
+  </Step>
+</Steps>
+
+### Example: Aggressive Cat Strategy
+
+Here's a complete example that makes cats more aggressive:
+
+```clojure
+(defrule aggressive-pursuit
+  "Move the closest cat directly toward the mouse"
+  
+  ; Lower priority than trap but higher than fallback
+  (declare (salience 1))
+  
+  ; Control fact
+  ?h <- (aggressive-pursuit)
+  
+  ; Mouse position
+  (casilla (fila ?filaRaton)(columna ?colRaton)(valor 4))
+  
+  ; All cat positions
+  ?gato1 <- (casilla (fila ?filaGato1)(columna ?colGato1)(valor 5 1))
+  ?gato2 <- (casilla (fila ?filaGato2)(columna ?colGato2)(valor 5 2))
+  ?gato3 <- (casilla (fila ?filaGato3)(columna ?colGato3)(valor 5 3))
+  ?gato4 <- (casilla (fila ?filaGato4)(columna ?colGato4)(valor 5 4))
+  
+  =>
+  (retract ?h)
+  
+  ; Calculate distances
+  (bind ?dist1 (+ (abs (- ?filaRaton ?filaGato1)) (abs (- ?colRaton ?colGato1))))
+  (bind ?dist2 (+ (abs (- ?filaRaton ?filaGato2)) (abs (- ?colRaton ?colGato2))))
+  (bind ?dist3 (+ (abs (- ?filaRaton ?filaGato3)) (abs (- ?colRaton ?colGato3))))
+  (bind ?dist4 (+ (abs (- ?filaRaton ?filaGato4)) (abs (- ?colRaton ?colGato4))))
+  
+  ; Find closest cat
+  (if (and (<= ?dist1 ?dist2) (<= ?dist1 ?dist3) (<= ?dist1 ?dist4))
+    then
+      (bind ?closestCat ?gato1)
+      (bind ?catFila ?filaGato1)
+      (bind ?catCol ?colGato1)
+  )
+  ; (repeat for other cats...)
+  
+  ; Move toward mouse
+  (bind ?newFila (- ?catFila 1))  ; Cats move "up" (toward row 1)
+  
+  ; Choose column based on mouse position
+  (if (> ?colRaton ?catCol)
+    then (bind ?newCol (+ ?catCol 1))  ; Mouse is to the right
+    else (bind ?newCol (- ?catCol 1))  ; Mouse is to the left
+  )
+  
+  ; Assert the move
+  (assert (fila-columna-mover-gatos ?newFila ?newCol ?closestCat))
+  (assert (ejecutar-movimiento-maquina-gato))
+  (assert (buscar-diagonales-gatos))
+)
+```
+
+<Tip>
+  Start with simple strategies and test thoroughly. Complex pattern matching can cause unexpected interactions with existing rules.
+</Tip>
+
+## Creating New Rules
+
+### Rule Anatomy
+
+Every CLIPS rule follows this structure:
+
+```clojure
+(defrule rule-name
+  "Documentation string explaining the rule"
+  
+  ; Optional: Set priority
+  (declare (salience N))
+  
+  ; LHS: Pattern matching (conditions)
+  ?var1 <- (pattern1)
+  (pattern2)
+  (test (condition))
+  
+  =>
+  
+  ; RHS: Actions to perform
+  (assert (new-fact))
+  (retract ?var1)
+  (modify ?var2 (slot new-value))
+  (printout t "Message" crlf)
+)
+```
+
+### Pattern Matching Techniques
+
+**1. Capture fact references:**
+```clojure
+?gato <- (casilla (fila ?f)(columna ?c)(valor 5 ?))
+```
+Stores the fact index in `?gato` for later use with `modify` or `retract`.
+
+**2. Match specific values:**
+```clojure
+(casilla (fila 1)(columna ?c)(valor 4))  ; Mouse in row 1, any column
+```
+
+**3. Use variables across patterns:**
+```clojure
+(casilla (fila ?f)(columna ?c1)(valor 4))     ; Mouse at ?f, ?c1
+(casilla (fila ?f)(columna ?c2&~?c1)(valor 5))  ; Cat same row, different column
+```
+
+**4. Constrain with tests:**
+```clojure
+(test (> ?filaGato ?filaRaton))  ; Cat must be behind mouse
+(test (eq (mod ?col 2) 1))       ; Column must be odd
+```
+
+**5. Use multislot matching:**
+```clojure
+(casilla (valor 5 ?id))         ; Match any cat, capture ID
+(casilla (valor ?v $?rest))     ; Match valor and capture remaining values
+```
+
+### Example: Detect Mouse Victory
+
+Add a rule to detect when the mouse reaches the goal:
+
+```clojure
+(defrule mouse-wins
+  "Detect when mouse reaches row 8 (cats' starting row)"
+  
+  ; High priority to check before other moves
+  (declare (salience 15))
+  
+  ; Match mouse in row 8
+  (casilla (fila 8)(columna ?)(valor 4))
+  
+  =>
+  
+  (printout t crlf crlf)
+  (printout t "┌────────────────────────────┐" crlf)
+  (printout t "│   VICTORY FOR THE MOUSE!   │" crlf)
+  (printout t "└────────────────────────────┘" crlf crlf)
+  (printout t "The mouse escaped!" crlf crlf)
+  (printout t "Type (jugar) to play again." crlf)
+  
+  (halt)
+)
+```
+
+<Info>
+  This rule should be inserted before the `finalizar-juego` rule. Give it higher salience (15) than the cat-win detection rule (10).
+</Info>
+
+## Implementing Game Variations
+
+### Variation 1: Different Number of Cats
+
+<Steps>
+  <Step title="Modify initial positions">
+    In `posiciones-piezas-iniciales` (line 209), add or remove cat placements:
+    
+    ```clojure
+    ; Add two more cats (6 total)
+    ?gato5 <- (casilla (fila 8)(columna 2)(valor ?))
+    ?gato6 <- (casilla (fila 8)(columna 4)(valor ?))
+    =>
+    (modify ?gato5 (valor 5 5))
+    (modify ?gato6 (valor 5 6))
+    ```
+  </Step>
+  
+  <Step title="Update AI rules">
+    Every rule that matches all cats needs updating:
+    
+    ```clojure
+    ; In ejecutar-movimiento-completar-fila-gatos, add:
+    ?gato5 <- (casilla (fila ?filaGato5)(columna ?colGato5)(valor 5 5))
+    ?gato6 <- (casilla (fila ?filaGato6)(columna ?colGato6)(valor 5 6))
+    ```
+  </Step>
+  
+  <Step title="Extend logic">
+    Update conditionals to handle additional cats in all strategy rules.
+  </Step>
+</Steps>
+
+<Warning>
+  More cats significantly change game difficulty. You may need to adjust AI strategies to prevent cats from blocking each other.
+</Warning>
+
+### Variation 2: Obstacles on the Board
+
+Add impassable obstacles:
+
+<Steps>
+  <Step title="Define obstacle piece">
+    ```clojure
+    (pieza
+      (valor 9)  ; New obstacle type
+      (parte1 " ##### ")
+      (parte2 " ##### ")
+      (parte3 " ##### ")
+    )
+    ```
+  </Step>
+  
+  <Step title="Place obstacles">
+    In `posiciones-piezas-iniciales`:
+    
+    ```clojure
+    ?obs1 <- (casilla (fila 4)(columna 4)(valor ?))
+    ?obs2 <- (casilla (fila 5)(columna 5)(valor ?))
+    =>
+    (modify ?obs1 (valor 9))
+    (modify ?obs2 (valor 9))
+    ```
+  </Step>
+  
+  <Step title="Update movement validation">
+    In `comprobar-casilla-ocupada` (line 441), reject obstacle squares:
+    
+    ```clojure
+    (if (or (= ?value 1) (= ?value 0))  ; Allow black or white
+      then
+        ; Original logic
+      else
+        (printout t crlf "Cannot move there - obstacle or occupied!"crlf)
+        ; Error handling
+    )
+    ```
+  </Step>
+  
+  <Step title="Update AI to avoid obstacles">
+    Modify cat movement rules to check for valor 9 before moving.
+  </Step>
+</Steps>
+
+### Variation 3: Time Limit Per Move
+
+Add a timer to each move:
+
+```clojure
+(deffunction get-timestamp ()
+  "Returns current time (requires CLIPS OS extensions)"
+  ; Implementation depends on CLIPS version/platform
+  (time)
+)
+
+(defrule pedir-movimiento-raton-con-tiempo
+  ?h <- (pedir-movimiento-raton)
+  (casilla(fila ?filaActual) (columna ?columnaActual)(valor 4))
+  =>
+  (retract ?h)
+  
+  (bind ?startTime (get-timestamp))
+  (bind ?timeLimit 30)  ; 30 second limit
+  (bind ?repetir TRUE)
+  
+  (while (eq ?repetir TRUE) do
+    (bind ?elapsed (- (get-timestamp) ?startTime))
+    
+    (if (> ?elapsed ?timeLimit)
+      then
+        (printout t crlf "TIME'S UP! Random move selected." crlf)
+        ; Generate random move
+        (bind ?fila (random 1 8))
+        (bind ?columna (random 1 8))
+        (bind ?repetir FALSE)
+      else
+        ; Normal input logic
+        (printout t "Time remaining: " (- ?timeLimit ?elapsed) " seconds" crlf)
+        ; Rest of input code...
+    )
+  )
+  
+  (assert (fila-columna-a-mover ?fila ?columna))
+  (assert (comprobar-casilla-ocupada))
+)
+```
+
+<Warning>
+  The `time` function availability depends on your CLIPS implementation. Standard CLIPS may not support real-time functions.
+</Warning>
+
+## Debugging CLIPS Code
+
+### Enable Trace Mode
+
+See which rules are firing:
+
+```
+CLIPS> (watch rules)
+CLIPS> (watch facts)
+CLIPS> (jugar)
+```
+
+This shows:
+- `==> f-X` when fact X is asserted
+- `<== f-X` when fact X is retracted
+- `FIRE X rule-name` when a rule fires
+
+### View Current Facts
+
+```
+CLIPS> (facts)
+```
+
+Shows all facts in working memory with their indices.
+
+### Inspect Specific Facts
+
+```
+CLIPS> (facts casilla)
+```
+
+Shows only facts matching the `casilla` template.
+
+### Test Pattern Matching
+
+```
+CLIPS> (matches rule-name)
+```
+
+Shows which facts currently match each pattern in the rule.
+
+### Step Through Execution
+
+```
+CLIPS> (run 1)
+```
+
+Executes only one rule firing, useful for debugging rule interactions.
+
+### Common Debugging Scenarios
+
+**Rule never fires:**
+
+<Steps>
+  <Step title="Check control facts">
+    ```
+    CLIPS> (facts)
+    ```
+    Verify the control fact exists (e.g., `pedir-movimiento-raton`).
+  </Step>
+  
+  <Step title="Test patterns individually">
+    Use `(matches rule-name)` to see which patterns fail to match.
+  </Step>
+  
+  <Step title="Verify salience">
+    A higher-priority rule might be consuming facts first. Check `(agenda)` to see pending rules.
+  </Step>
+</Steps>
+
+**Infinite loop:**
+
+<Steps>
+  <Step title="Add fact consumption">
+    Ensure control facts are retracted:
+    
+    ```clojure
+    ?h <- (my-control-fact)
+    =>
+    (retract ?h)  ; Must retract or rule will fire repeatedly
+    ```
+  </Step>
+  
+  <Step title="Check re-assertion logic">
+    If the RHS re-asserts the same fact, the rule fires again.
+  </Step>
+</Steps>
+
+**Unexpected rule firing:**
+
+```
+CLIPS> (watch activations)
+CLIPS> (watch rules)
+```
+
+This shows when rules enter and leave the agenda.
+
+## Testing Rule Modifications
+
+### Unit Testing Approach
+
+<Steps>
+  <Step title="Create test scenarios">
+    Write helper functions to set up specific board states:
+    
+    ```clojure
+    (deffunction test-scenario-1 ()
+      "Mouse trapped in corner"
+      (reset)
+      
+      ; Clear default positions
+      (do-for-all-facts ((?f casilla)) (= ?f:valor 4)
+        (modify ?f (valor 1))
+      )
+      
+      ; Set test position
+      (do-for-fact ((?f casilla)) (and (= ?f:fila 1) (= ?f:columna 1))
+        (modify ?f (valor 4))
+      )
+      
+      ; Position cats
+      ; ...
+    )
+    ```
+  </Step>
+  
+  <Step title="Run test">
+    ```
+    CLIPS> (test-scenario-1)
+    CLIPS> (run 1)
+    CLIPS> (facts casilla)  ; Verify expected state
+    ```
+  </Step>
+  
+  <Step title="Automate assertions">
+    ```clojure
+    (deffunction assert-cat-at-position (?expectedRow ?expectedCol)
+      (if (any-factp ((?f casilla)) 
+            (and (= ?f:fila ?expectedRow) 
+                 (= ?f:columna ?expectedCol)
+                 (eq (nth$ 1 ?f:valor) 5)))
+        then (printout t "✓ Test passed" crlf)
+        else (printout t "✗ Test failed" crlf)
+      )
+    )
+    ```
+  </Step>
+</Steps>
+
+### Regression Testing
+
+After modifying AI:
+
+1. **Play multiple games** - Ensure cats still behave reasonably
+2. **Test edge cases** - Mouse in corners, cats in straight line, etc.
+3. **Check for crashes** - Invalid moves, out-of-bounds access
+4. **Performance test** - Count rule firings per turn (use `(watch statistics)`)
+
+## Best Practices for Rule-Based Systems
+
+### 1. Use Salience Sparingly
+
+<Tip>
+  Only set salience when execution order truly matters. Let CLIPS' conflict resolution handle most prioritization.
+</Tip>
+
+```clojure
+; Good: Critical game-end detection
+(declare (salience 10))
+
+; Bad: Arbitrary priority to force ordering
+(declare (salience 7))  ; Why 7? Unclear!
+```
+
+### 2. Document Rule Purpose
+
+Always include documentation strings:
+
+```clojure
+(defrule my-rule
+  "Detailed explanation of:
+   - What pattern this detects
+   - Why this move is strategic
+   - When this rule should fire"
+  ; ...
+)
+```
+
+### 3. Use Meaningful Variable Names
+
+```clojure
+; Bad
+?g1 <- (casilla (fila ?f1)(columna ?c1)(valor 5 1))
+
+; Good
+?catLeft <- (casilla (fila ?catLeftRow)(columna ?catLeftCol)(valor 5 1))
+```
+
+### 4. Minimize Fact Modifications
+
+Prefer:
+- **Assert/retract** for state changes
+- **Modify** only when the fact identity must be preserved
+
+### 5. Avoid Redundant Patterns
+
+CLIPS performs pattern matching on every cycle. Minimize unnecessary checks:
+
+```clojure
+; Less efficient
+(casilla (fila ?f)(columna ?c)(valor ?v))
+(test (eq ?v 4))
+
+; More efficient
+(casilla (fila ?f)(columna ?c)(valor 4))
+```
+
+### 6. Handle Edge Cases
+
+Always check boundaries:
+
+```clojure
+(bind ?newCol (+ ?col 1))
+
+; Add validation
+(if (> ?newCol 8)
+  then (bind ?newCol 8)  ; Clamp to board edge
+)
+```
+
+### 7. Use Control Facts Intentionally
+
+Control facts coordinate rule execution:
+
+```clojure
+; Good: Clear control flow
+(assert (phase-1-complete))
+(assert (begin-phase-2))
+
+; Bad: Implicit state
+(assert (counter 1))
+```
+
+## Advanced Techniques
+
+### Dynamic Rule Loading
+
+Load strategy modules conditionally:
+
+```clojure
+(deffunction load-aggressive-ai ()
+  (load "ai_aggressive.clp")
+)
+
+(deffunction load-defensive-ai ()
+  (load "ai_defensive.clp")
+)
+```
+
+### Fact Queries
+
+Use queries for complex pattern checks:
+
+```clojure
+(defquery find-surrounded-cat
+  (casilla (fila ?catRow)(columna ?catCol)(valor 5 ?))
+  (casilla (fila ?catRow)(columna ?leftCol&:(= ?leftCol (- ?catCol 1)))(valor 4))
+  (casilla (fila ?catRow)(columna ?rightCol&:(= ?rightCol (+ ?catCol 1)))(valor 4))
+)
+
+; Use in rules
+(defrule rescue-surrounded-cat
+  (find-surrounded-cat (?catRow ?catCol))
+  =>
+  ; Logic to help the cat
+)
+```
+
+### Probabilistic AI
+
+Add randomness to cat decisions:
+
+```clojure
+(if (> (random) 0.7)  ; 70% chance
+  then
+    ; Use strategic move
+  else
+    ; Use random move
+)
+```
+
+This makes the game less predictable and more challenging.
+
+## Resources
+
+- [CLIPS Reference Manual](http://www.clipsrules.net/Documentation.html) - Official documentation
+- [CLIPS User's Guide](http://www.clipsrules.net/) - Comprehensive tutorials
+- Expert Systems: Principles and Programming (Giarratano & Riley) - Classic textbook
+
+<Info>
+  The original game was created by Geovanny Zambrano (Sep 4, 2020) as an educational example of expert systems in CLIPS.
+</Info>

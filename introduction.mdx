@@ -1,0 +1,80 @@
+---
+title: Introduction
+description: A rule-based expert system where AI-controlled cats hunt a player-controlled mouse on a chessboard using CLIPS
+---
+
+# Mouse and Cats Game
+
+Welcome to the Mouse and Cats Game, an intelligent board game built as an expert system using CLIPS (C Language Integrated Production System). This classic strategy game demonstrates the power of rule-based AI where four cats hunt a single mouse on a standard chessboard.
+
+## What Makes This Special?
+
+This isn't just a simple game - it's a sophisticated expert system that showcases perfect AI strategy. The cats use a rule-based decision engine with multiple strategic layers to ensure a 100% win rate when played optimally.
+
+<CardGroup cols={2}>
+  <Card title="Perfect AI Strategy" icon="chess">
+    The cat AI achieves a 100% win rate through hierarchical rule evaluation, strategic positioning, and tactical pattern matching
+  </Card>
+  
+  <Card title="Rule-Based Expert System" icon="brain">
+    Built entirely in CLIPS using production rules, templates, and facts - a pure expert system architecture
+  </Card>
+  
+  <Card title="Educational Tool" icon="graduation-cap">
+    Perfect for learning expert systems, rule-based programming, and AI game strategy implementation
+  </Card>
+  
+  <Card title="Interactive Gameplay" icon="gamepad">
+    Command-line interface with ASCII art board visualization and real-time move validation
+  </Card>
+</CardGroup>
+
+## Game Overview
+
+The game takes place on an 8x8 chessboard where pieces move diagonally on black squares only, similar to checkers:
+
+- **The Mouse** starts at row 1, column 4 (center bottom)
+- **Four Cats** start at row 8, occupying all four black squares
+- **Mouse Goal**: Reach row 8 (the cats' starting row) by evading capture
+- **Cats Goal**: Trap the mouse so it has no valid moves remaining
+
+### How Movement Works
+
+The mouse moves first and can move to any adjacent diagonal black square not occupied by a cat. After each mouse move, one cat moves forward diagonally (cats can only move forward, never backward). The game continues with alternating turns until either the mouse reaches row 8 (mouse wins) or becomes trapped (cats win).
+
+## The AI Architecture
+
+The expert system uses multiple strategic rules with different priority levels (salience):
+
+1. **Enclosing the Mouse** (highest priority - salience 10): Detects when the mouse has only one escape square and positions a cat to capture it
+2. **Block Formation**: Moves cats in coordinated formation, ensuring they advance as a unified wall
+3. **Semi-Encirclement**: Identifies patterns where the mouse is partially surrounded and tightens the trap
+4. **Closest Cat Movement**: Moves the cat furthest from the mouse to close distance gaps
+5. **Default Strategy** (lowest priority - salience -10): Handles edge cases and ensures a cat always moves
+
+The AI calculates diagonal positions for all pieces, evaluates board patterns, and selects moves based on rule precedence - demonstrating classic expert system conflict resolution.
+
+## Real Expert System Implementation
+
+This game is implemented using core CLIPS features:
+
+- **Templates** (`deftemplate`): Define board squares and piece representations
+- **Rules** (`defrule`): Encode strategic knowledge with conditions and actions
+- **Facts** (`deffacts`): Initialize the game state and piece positions
+- **Functions** (`deffunction`): Handle user commands like `(jugar)` and `(instrucciones)`
+
+The source code contains 2,110 lines of CLIPS production rules that implement perfect strategy through pure symbolic reasoning - no search algorithms, just rule-based intelligence.
+
+## Ready to Play?
+
+Jump into the quickstart to see the cats' perfect strategy in action, or explore the installation guide to set up CLIPS and load the game.
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Install CLIPS 6.4 and load the game file
+  </Card>
+  
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Play your first game in minutes
+  </Card>
+</CardGroup>

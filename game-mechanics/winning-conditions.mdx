@@ -1,0 +1,223 @@
+---
+title: 'Winning Conditions'
+description: 'How to win or lose in Mouse and Cats'
+---
+
+## Victory Conditions
+
+The game has two distinct win conditions depending on which side achieves their objective first.
+
+### Mouse Wins
+
+The mouse achieves victory when it reaches the cats' starting row.
+
+**Winning condition:**
+- The mouse must reach **row 8** (the opposite side of the board)
+- It can be on any black square in row 8
+- Specifically, any of these positions: (8,1), (8,3), (8,5), or (8,7)
+
+<Info>
+These are the same squares where the cats started the game. The mouse essentially needs to "break through" the cats' defensive line and reach their home row.
+</Info>
+
+**From the official rules:**
+
+> "Gana el ratón si consigue llegar al lado contrario, es decir, a cualquiera de las casillas de las que salieron los gatos."
+> 
+> (The mouse wins if it manages to reach the opposite side, that is, any of the squares from which the cats started.)
+
+### Cats Win
+
+The cats achieve victory when they trap the mouse.
+
+**Winning condition:**
+- The mouse has **no legal moves available**
+- All four diagonal squares adjacent to the mouse are either:
+  - Occupied by cats
+  - Outside the board boundaries
+  - White squares (not playable)
+
+<Warning>
+Unlike some games, there is no "capture" mechanic. The cats don't remove the mouse from the board—they simply need to eliminate all possible moves.
+</Warning>
+
+**From the official rules:**
+
+> "Ganan los gatos si consiguen atrapar al ratón, de manera que el ratón no pueda moverse más."
+>
+> (The cats win if they manage to trap the mouse, such that the mouse can no longer move.)
+
+## How the Game Ends
+
+### Mouse Victory Scenario
+
+If the mouse successfully reaches row 8:
+
+1. The final board position is displayed
+2. The game announces the mouse's victory
+3. The game session ends
+
+**Example winning position:**
+
+```
+ ------- ------- ------- ------- ------- ------- ------- -------
+|       |(_)_(_)|       | . . . |       | . . . |       | . . . |
+|       | (o o) |       | . . . |       | . . . |       | . . . | 8
+|       |==\\o/==|       | . . . |       | . . . |       | . . . |
+ ------- ------- ------- ------- ------- ------- ------- -------
+```
+
+The mouse has reached row 8 and wins!
+
+### Cat Victory Scenario
+
+When the cats successfully trap the mouse:
+
+1. The final board position is displayed
+2. A "Game Over" message is shown
+3. The game session ends
+
+**Example losing position:**
+
+```
+ ------- ------- ------- ------- ------- ------- ------- -------
+| /\\_/\ |       | /\\_/\ |       | . . . |       | . . . |       |
+|( o.o )|       |( o.o )|       | . . . |       | . . . |       | 5
+| > ^ < |       | > ^ < |       | . . . |       | . . . |       |
+ ------- ------- ------- ------- ------- ------- ------- -------
+|       |(_)_(_)|       | /\\_/\ |       | . . . |       | . . . |
+|       | (o o) |       | . . . |       | . . . |       | . . . | 4
+|       |==\\o/==|       | . . . |       | . . . |       | . . . |
+ ------- ------- ------- ------- ------- ------- ------- -------
+| . . . |       | /\\_/\ |       | . . . |       | . . . |       |
+| . . . |       | . . . |       | . . . |       | . . . |       | 3
+| . . . |       | . . . |       | . . . |       | . . . |       |
+ ------- ------- ------- ------- ------- ------- ------- -------
+```
+
+The mouse at (4,2) is surrounded by cats and has no valid moves—the cats win!
+
+## Understanding Trapped Positions
+
+### What Constitutes Being Trapped
+
+A mouse is trapped when all four diagonal directions are blocked:
+
+**For a mouse at position (row, col), it checks:**
+- Forward-left: (row+1, col-1)
+- Forward-right: (row+1, col+1)
+- Backward-left: (row-1, col-1)  
+- Backward-right: (row-1, col+1)
+
+If **all four** positions are either occupied by cats or invalid (outside board), the mouse is trapped.
+
+### Example Trap Formations
+
+#### Corner Trap
+
+When the mouse is in a corner, it only needs 2 cats to be trapped:
+
+```
+Position (1,2):
+- Cannot go to (0, 1) - outside board
+- Cannot go to (0, 3) - outside board
+- Cat at (2, 1)
+- Cat at (2, 3)
+= Trapped!
+```
+
+#### Edge Trap
+
+When the mouse is on an edge but not a corner, it needs 3 blocking positions:
+
+```
+Position (1,4):
+- Cannot go to (0, 3) - outside board
+- Cannot go to (0, 5) - outside board
+- Cat at (2, 3)
+- Cat at (2, 5)
+= Trapped!
+```
+
+#### Center Trap
+
+When the mouse is in the center of the board, all 4 diagonal squares must be blocked:
+
+```
+Position (4,4):
+- Cat at (3, 3)
+- Cat at (3, 5)
+- Cat at (5, 3)
+- Cat at (5, 5)
+= Trapped!
+```
+
+<Note>
+The AI in this implementation uses sophisticated strategies to force the mouse into trapped positions, achieving a 100% win rate against human players.
+</Note>
+
+## Win Detection
+
+The game automatically detects win conditions after each move:
+
+### After Mouse Moves
+
+The system checks:
+1. Has the mouse reached row 8?
+2. If yes → Mouse wins
+3. If no → Cat's turn begins
+
+### After Cat Moves
+
+The system checks:
+1. Does the mouse have any legal moves?
+2. If no legal moves → Cats win
+3. If legal moves exist → Mouse's turn begins
+
+## AI Strategy Insights
+
+The CLIPS expert system uses multiple rule-based strategies to trap the mouse:
+
+<AccordionGroup>
+  <Accordion title="Block Formation (Completar Fila)">
+    Cats advance together in a coordinated line, maintaining formation to limit the mouse's forward progress. The AI identifies which cat should move to maintain an unbroken diagonal barrier.
+  </Accordion>
+  
+  <Accordion title="Semi-Encirclement (Semi-encerrar)">
+    When the mouse is positioned between cats, the AI recognizes the opportunity to tighten the trap by moving the appropriate cat closer.
+  </Accordion>
+  
+  <Accordion title="Furthest Cat Advancement (Gato Más Alejado)">
+    If a cat is more than 2 columns away from the mouse, it advances diagonally toward the mouse to prevent easy escapes around the flanks.
+  </Accordion>
+</AccordionGroup>
+
+<Info>
+The source code reveals that the AI evaluates multiple strategies with different priority levels (salience values), ensuring the most effective move is chosen each turn.
+</Info>
+
+## Strategic Implications
+
+### For the Mouse Player
+
+To have any chance of winning:
+
+- **Avoid being cornered** early in the game
+- **Create multiple escape routes** at all times
+- **Force cats to spread out** rather than maintaining formation
+- **Use backward moves** strategically since cats cannot follow
+- **Push through gaps** in the cat formation before they close
+
+### Game Difficulty
+
+According to the source documentation:
+
+> "El sistema presenta la inteligencia artificial de las piezas de los gatos, de manera que un 100% de las partidas son ganadas por los gatos."
+>
+> (The system features artificial intelligence for the cat pieces, such that 100% of games are won by the cats.)
+
+This makes the game extremely challenging—the AI plays perfectly, so finding a winning path requires exceptional play from the human player.
+
+<Warning>
+While the AI is designed to achieve a 100% win rate, creative and strategic play might still find edge cases or force draws. The game serves as an excellent example of expert system design and game AI.
+</Warning>

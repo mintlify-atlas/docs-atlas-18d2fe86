@@ -1,0 +1,209 @@
+---
+title: 'Data Structures'
+description: 'Templates and initial facts defining the game board and pieces'
+icon: 'database'
+---
+
+## Templates
+
+The game uses two main templates to represent the board state and display pieces.
+
+### casilla Template
+
+Defines the structure of each square on the chess board.
+
+```clips
+(deftemplate casilla
+  "Define la estructura de las casillas de un tablero de ajedrez"
+
+  ;El campo fila contendrá el número de fila de la casilla
+  (slot fila (type NUMBER))
+
+  ;El campo columna contendrá el número de fila de la casilla
+  (slot columna (type NUMBER))
+
+  ;El campo valor contendrá el identificador de una casilla
+  (multislot valor (type NUMBER))
+)
+```
+
+#### Template Slots
+
+<ParamField path="fila" type="NUMBER" required>
+  Row number of the square (1-8)
+</ParamField>
+
+<ParamField path="columna" type="NUMBER" required>
+  Column number of the square (1-8)
+</ParamField>
+
+<ParamField path="valor" type="NUMBER multislot" required>
+  Identifier for the square's content:
+  - `0` - White square (empty)
+  - `1` - Black square (empty)
+  - `4` - Square with mouse
+  - `5 1` - Square with cat #1
+  - `5 2` - Square with cat #2
+  - `5 3` - Square with cat #3
+  - `5 4` - Square with cat #4
+</ParamField>
+
+<Note>
+  The `valor` slot uses a multislot to store both the piece type (5 for cat) and the cat's ID number.
+</Note>
+
+### pieza Template
+
+Defines the visual representation of pieces for console display.
+
+```clips
+(deftemplate pieza
+  "Estructura de las piezas a imprimir por pantalla.
+   Cada casilla internanmente consta de un espacio de 3x3 por ello se usan 3 partes"
+
+  ;Campo para enlazar el valor de casilla con la pieza a imprimir por pantalla
+  (slot valor)
+
+  ;Contiene la primer parte a imprimir de una pieza
+  (slot parte1)
+
+  ;Contiene la segunda parte a imprimir de una pieza
+  (slot parte2)
+
+  ;Contiene la tercera parte a imprimir de una pieza
+  (slot parte3)
+)
+```
+
+#### Template Slots
+
+<ParamField path="valor" type="NUMBER" required>
+  Links to the casilla valor field (0, 1, 4, or 5)
+</ParamField>
+
+<ParamField path="parte1" type="STRING" required>
+  First line of the ASCII art representation (7 characters wide)
+</ParamField>
+
+<ParamField path="parte2" type="STRING" required>
+  Second line of the ASCII art representation (7 characters wide)
+</ParamField>
+
+<ParamField path="parte3" type="STRING" required>
+  Third line of the ASCII art representation (7 characters wide)
+</ParamField>
+
+## Initial Facts
+
+The `hechos-iniciales` deffacts establishes the initial game state.
+
+```clips
+(deffacts hechos-iniciales
+  "Declaracion de hechos iniciales"
+
+  ;Hecho de control para ingresar el tablero sin piezas.
+  (ingresar-tablero)
+
+  ;Hecho para controlar la impresion del tablero.
+  (imprime 1 1)
+
+  ;Hecho para definir que parte de la regla se debe imprimir.
+  (parteImprimir 1)
+
+  ;Hecho de control para actualizar la impresion del tablero.
+  (actualizar-tablero)
+
+  ; Visual representations for each piece type...
+)
+```
+
+### Control Facts
+
+<ParamField path="ingresar-tablero" type="fact">
+  Triggers the rule to initialize the blank board (all 64 squares)
+</ParamField>
+
+<ParamField path="imprime" type="fact (row col)">
+  Controls which square is currently being printed. Starts at (1 1)
+</ParamField>
+
+<ParamField path="parteImprimir" type="fact (part)">
+  Indicates which part (1-3) of the piece ASCII art to print
+</ParamField>
+
+<ParamField path="actualizar-tablero" type="fact">
+  Triggers the board rendering rule
+</ParamField>
+
+### Piece Visual Definitions
+
+Each piece type has an associated visual representation:
+
+#### White Square (valor 0)
+```clips
+(pieza
+  (valor 0)
+  (parte1 "       ")
+  (parte2 "       ")
+  (parte3 "       ")
+)
+```
+
+#### Black Square (valor 1)
+```clips
+(pieza
+  (valor 1)
+  (parte1 " . . . ")
+  (parte2 " . . . ")
+  (parte3 " . . . ")
+)
+```
+
+#### Mouse (valor 4)
+```clips
+(pieza
+  (valor 4)
+  (parte1 "(_)_(_)")
+  (parte2 " (o o) ")
+  (parte3 "==\\o/==")
+)
+```
+
+Visual:
+```
+(_)_(_)
+ (o o) 
+==\o/==
+```
+
+#### Cat (valor 5)
+```clips
+(pieza
+  (valor 5)
+  (parte1 " /\\_/\\ ")
+  (parte2 "( o.o )")
+  (parte3 " > ^ < ")
+)
+```
+
+Visual:
+```
+ /\_/\ 
+( o.o )
+ > ^ < 
+```
+
+## Board Representation
+
+The board is an 8x8 checkerboard where:
+
+- **Rows**: Numbered 1-8 (bottom to top)
+- **Columns**: Numbered 1-8 (left to right)
+- **Only black squares** are playable (like checkers)
+- **Initial Setup**:
+  - Mouse starts at row 1, column 4
+  - Four cats start at row 8 on black squares (columns 1, 3, 5, 7)
+
+<Info>
+  The game uses a standard chess board layout where only the dark squares are used, similar to checkers.
+</Info>

@@ -1,0 +1,335 @@
+---
+title: 'Functions Reference'
+description: 'Documentation for game control functions'
+icon: 'function'
+---
+
+## Game Control Functions
+
+The game provides two main functions for player interaction.
+
+---
+
+## jugar()
+
+Starts a new game session.
+
+### Signature
+
+```clips
+(deffunction jugar ()
+  "Función para comenzar un nuevo juego"
+  (clear-window)
+  (reset)
+  (run)
+)
+```
+
+### Parameters
+
+None
+
+### Return Value
+
+None (void)
+
+### Behavior
+
+1. **`(clear-window)`** - Clears the console screen
+2. **`(reset)`** - Resets the CLIPS environment:
+   - Removes all facts except initial facts
+   - Activates rules from `deffacts hechos-iniciales`
+   - Sets up blank board and piece definitions
+3. **`(run)`** - Starts the inference engine:
+   - Rules begin firing in priority order
+   - Board is initialized and rendered
+   - Player is prompted for first move
+
+### Usage
+
+```clips
+; Start a new game immediately
+(jugar)
+```
+
+<Note>
+  This function skips the instruction screen and goes directly to gameplay.
+</Note>
+
+### Source Location
+
+raton_y_gatos.clp:21-26
+
+---
+
+## instrucciones()
+
+Displays game instructions then starts a new game.
+
+### Signature
+
+```clips
+(deffunction instrucciones ()
+  "Función para mostrar las instruccion del juego"
+  ; ... instruction display code ...
+  (jugar)
+)
+```
+
+### Parameters
+
+None
+
+### Return Value
+
+None (void)
+
+### Behavior
+
+#### Screen 1: Setup Instructions
+
+1. Clears window
+2. Displays header: "JUEGO DEL RATON Y LOS GATOS"
+3. Shows setup instructions:
+   - Requires two players and a chess board
+   - Four cat pieces (same color)
+   - One mouse piece (different color)
+   - Initial placement: cats on row 8 black squares, mouse on row 1
+4. Waits for user to press any key
+
+#### Screen 2: Game Rules
+
+1. Clears window and redisplays header
+2. Shows five game rules:
+   - **Rule 1**: Mouse moves first, can move to any adjacent black diagonal square
+   - **Rule 2**: Cats move forward only, one at a time
+   - **Rule 3**: Players alternate turns
+   - **Rule 4**: Mouse wins by reaching row 8
+   - **Rule 5**: Cats win by trapping the mouse
+3. Waits for user to press any key
+4. Calls `(jugar)` to start the game
+
+### Usage
+
+```clips
+; Show instructions and start game
+(instrucciones)
+```
+
+### Full Source Code
+
+```clips
+(deffunction instrucciones ()
+  "Función para mostrar las instruccion del juego"
+
+  (clear-window)
+  (printout t crlf   "    ::::::::::::::::::::::::::::JUEGO DEL RATON Y LOS GATOS:::::::::::::::::::::::"crlf)
+  (printout t crlf   "    INSTRUCCIONES"crlf)
+
+  (printout t crlf   "    Se necesitan dos jugadores y un tablero de ajedrez."crlf
+                     "    Se utilizan cuatro fichas del mismo color, que simbolizan a los gatos,"crlf
+                     "    y otra ficha de distinto color, que simboliza al ratón."crlf
+                     "    Los cuatro gatos se sitúan en un extremo del tablero, ocupando todas las"crlf
+                     "    casillas negras de la primera fila. El ratón se sitúa en el otro extremo"crlf
+                     "    del tablero, en cualquiera de las casillas negras de la primera fila. "crlf
+  )
+  (printout t crlf   "    Escribe una letra para continuar...")
+  (bind ?input (read))
+  (clear-window)
+
+  (printout t crlf   "    ::::::::::::::::::::::::::::JUEGO DEL RATON Y LOS GATOS:::::::::::::::::::::::"crlf)
+  (printout t crlf   "    INSTRUCCIONES"crlf)
+
+  (printout t crlf   "1-  El ratón es el primero en moverse. En cualquier momento el ratón puede moverse"crlf
+                     "    a cualquiera de las casillas negras próximas a él, siempre que la casilla no "crlf
+                     "    esté ya ocupada por un gato."crlf crlf
+
+                     "2-  Después de moverse el ratón, le toca el turno a uno de los gatos. Los gatos "crlf
+                     "    pueden moverse sólo hacia delante, siempre qu e la casilla no esté ocupada por "crlf
+                     "    el ratón o por alguno de los otros gatos."crlf crlf
+
+                     "3-  Cuando se haya movido uno de los gatos, le tocará el turno al ratón, y así "crlf
+                     "    sucesivamente."crlf crlf
+
+                     "4-  Gana el ratón si consigue llegar al lado contrario, es decir, a cualquiera "crlf
+                     "    de las casillas de las que salieron los gatos."crlf crlf
+
+                     "5-  Ganan los gatos si consiguen atrapar al ratón, de manera que el ratón no pueda"crlf
+                     "    moverse más."crlf crlf
+  )
+  (printout t crlf   "    Escribe una letra para comenzar...")
+  (bind ?input (read))
+  (jugar)
+)
+```
+
+### Source Location
+
+raton_y_gatos.clp:28-71
+
+---
+
+## Common CLIPS Built-in Functions Used
+
+The game also uses several CLIPS built-in functions:
+
+### I/O Functions
+
+<ParamField path="printout" type="function">
+  **Syntax**: `(printout <target> <items>...)`
+  
+  Prints text to output stream. Target `t` means standard output.
+  
+  Special tokens:
+  - `crlf` - Carriage return + line feed (newline)
+  
+  **Example**: `(printout t "Hello" crlf)`
+</ParamField>
+
+<ParamField path="read" type="function">
+  **Syntax**: `(read)`
+  
+  Reads a single token from standard input.
+  
+  **Returns**: Number or symbol entered by user
+  
+  **Example**: `(bind ?input (read))`
+</ParamField>
+
+<ParamField path="clear-window" type="function">
+  **Syntax**: `(clear-window)`
+  
+  Clears the console screen (platform-dependent).
+</ParamField>
+
+### Control Functions
+
+<ParamField path="reset" type="function">
+  **Syntax**: `(reset)`
+  
+  Resets the CLIPS environment:
+  - Removes all facts except those in deffacts
+  - Clears agenda
+  - Re-asserts initial facts
+</ParamField>
+
+<ParamField path="run" type="function">
+  **Syntax**: `(run [limit])`
+  
+  Starts executing rules from the agenda until:
+  - No more rules can fire, or
+  - Optional limit is reached, or  
+  - `(halt)` is called
+</ParamField>
+
+<ParamField path="halt" type="function">
+  **Syntax**: `(halt)`
+  
+  Stops rule execution immediately. Used in `finalizar-juego` rule.
+</ParamField>
+
+### Fact Manipulation Functions
+
+<ParamField path="assert" type="function">
+  **Syntax**: `(assert <fact>)`
+  
+  Adds a new fact to working memory.
+  
+  **Example**: `(assert (pedir-movimiento-raton))`
+</ParamField>
+
+<ParamField path="retract" type="function">
+  **Syntax**: `(retract <fact-index>)`
+  
+  Removes a fact from working memory.
+  
+  **Example**: `(retract ?h)`
+</ParamField>
+
+<ParamField path="modify" type="function">
+  **Syntax**: `(modify <fact-index> (<slot> <value>)...)`
+  
+  Changes slot values in an existing fact.
+  
+  **Example**: `(modify ?casilla (valor 4))`
+</ParamField>
+
+<ParamField path="fact-slot-value" type="function">
+  **Syntax**: `(fact-slot-value <fact-index> <slot-name>)`
+  
+  Retrieves the value of a specific slot from a fact.
+  
+  **Returns**: The slot's value
+  
+  **Example**: `(bind ?val (fact-slot-value ?gato valor))`
+</ParamField>
+
+### Math and Logic Functions
+
+<ParamField path="bind" type="function">
+  **Syntax**: `(bind <variable> <expression>)`
+  
+  Assigns a value to a variable.
+  
+  **Example**: `(bind ?suma (+ ?a ?b))`
+</ParamField>
+
+<ParamField path="if-then-else" type="function">
+  **Syntax**: `(if <condition> then <actions> else <actions>)`
+  
+  Conditional execution.
+  
+  **Example**: 
+  ```clips
+  (if (> ?x 10)
+    then (printout t "Large" crlf)
+    else (printout t "Small" crlf)
+  )
+  ```
+</ParamField>
+
+<ParamField path="loop-for-count" type="function">
+  **Syntax**: `(loop-for-count (<var> <start> <end>) do <actions>)`
+  
+  For loop iteration.
+  
+  **Example**: `(loop-for-count (?i 1 8) do (printout t ?i crlf))`
+</ParamField>
+
+---
+
+## Usage Examples
+
+### Starting the Game for First Time
+
+```clips
+; Load the game
+CLIPS> (load "raton_y_gatos.clp")
+TRUE
+
+; View instructions and play
+CLIPS> (instrucciones)
+```
+
+### Starting Subsequent Games
+
+```clips
+; Quick restart after game over
+CLIPS> (jugar)
+```
+
+### Debugging Gameplay
+
+```clips
+; Start game
+CLIPS> (jugar)
+
+; In another terminal, view current facts
+CLIPS> (facts)
+
+; View which rules are ready to fire
+CLIPS> (agenda)
+
+; View all rules
+CLIPS> (rules)
+```
